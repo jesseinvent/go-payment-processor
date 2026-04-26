@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -24,7 +25,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
   err := c.ShouldBindJSON(&createUserDto)
 
   if err != nil {
-	c.JSON(400, response.Error("Invalid request format."))
+	c.JSON(400, response.Error(fmt.Sprintf("Invalid request format - %s", err.Error())))
 
 	return
   }
@@ -39,7 +40,15 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	return
   }
 
-  c.JSON(http.StatusCreated, response.Success("User successfully created", &user))
+  createUserResponse := UserResponse{
+	ID: user.ID,
+	Email: user.Email,
+	PhoneNumber: user.PhoneNumber,
+	Name: user.PhoneNumber,
+	CreatedAt: user.CreatedAt,
+  }
+
+  c.JSON(http.StatusCreated, response.Success("User successfully created", createUserResponse))
  }
 
 func (h *UserHandler) GetUserById(c *gin.Context) {
@@ -65,5 +74,13 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.Success("User found", user))
+	userResponse := UserResponse{
+		ID: user.ID,
+		Email: user.Email,
+		PhoneNumber: user.PhoneNumber,
+		Name: user.PhoneNumber,
+		CreatedAt: user.CreatedAt,
+  	}
+
+	c.JSON(http.StatusOK, response.Success("User found", userResponse))
 }

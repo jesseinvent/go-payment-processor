@@ -5,8 +5,8 @@ import (
 )
 type Currency struct {
 	gorm.Model		
-	name     string		`gorm:"not null"`
-	symbol string 		`gorm:"not null"`
-	iconUrl string		`gorm:"not null"`
-	status bool			`gorm:"not null"`
+	Name     string	 `gorm:"not null"`
+	Symbol 	 string  `gorm:"not null"`
+	IconUrl  string	 `gorm:"not null"`
+	Status 	 bool	 `gorm:"not null"`
 }

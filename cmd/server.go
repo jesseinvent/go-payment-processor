@@ -32,7 +32,7 @@ func RunServer() {
 
 	r := gin.Default()
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", config.DB_HOST, config.DB_USER, config.DB_PASSWORD,config.DB_NAME,config.DB_PORT)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", config.DB_HOST, config.DB_USER, config.DB_PASSWORD,config.DB_NAME, config.DB_PORT)
 
 	dbConn, err := db.ConnectDB(dsn);
 
@@ -56,7 +56,7 @@ func RunServer() {
 
 	r.GET("/", func (c *gin.Context){
 		c.JSON(http.StatusOK, gin.H{
-			"message": "Hello world",
+			"message": "Payment Processor.",
 		})
 	})
 

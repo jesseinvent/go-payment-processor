@@ -18,10 +18,10 @@ func (s *UserService) Create(email, phoneNumber, name string) (*User, error) {
 	err := s.userStore.Create(user)
 
 	if err != nil {
-		return user, nil
+		return nil, err
 	}
 
-	return nil, err
+	return user, nil
 }
 
 func (s *UserService) GetByID(id int) (*User, error) {
