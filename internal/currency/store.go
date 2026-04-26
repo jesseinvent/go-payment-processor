@@ -10,7 +10,7 @@ type CurrencyStore struct {
 	db *gorm.DB
 }
 
-func NewStore(db *gorm.DB) CurrencyStore {
+func NewCurrencyStore(db *gorm.DB) CurrencyStore {
 	return CurrencyStore{db: db}
 }
 
@@ -31,4 +31,21 @@ func (s *CurrencyStore) GetAll() ([]Currency, error) {
 	}
 
 	return currencies, nil
+}
+
+func (s *CurrencyStore) GetByID(id uint) (*Currency, error) {
+
+	var currency Currency
+	
+	err := s.db.First(&currency, id).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &currency, nil
 }

@@ -3,7 +3,7 @@ type CurrencyService struct {
 	store CurrencyStore
 }
 
-func NewService(store CurrencyStore) CurrencyService {
+func NewCurrencyService(store CurrencyStore) CurrencyService {
 	return CurrencyService{store: store}
 }
 

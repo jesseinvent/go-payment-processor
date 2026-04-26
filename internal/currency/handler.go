@@ -12,7 +12,7 @@ type CurrencyHandler struct {
 	currencyService CurrencyService
 }
 
-func NewHandler(currencyService CurrencyService) CurrencyHandler {
+func NewCurrencyHandler(currencyService CurrencyService) CurrencyHandler {
 	return CurrencyHandler{currencyService: currencyService}
 }
 

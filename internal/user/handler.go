@@ -63,7 +63,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 	id, err := strconv.Atoi(userId)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.Error("Invalid userId"))
+		c.JSON(http.StatusBadRequest, response.Error("Invalid userId Param"))
 		return
 	}
 
