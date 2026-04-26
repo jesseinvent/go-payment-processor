@@ -6,9 +6,22 @@ import (
 	"github.com/spf13/viper"
 )
 
+type ENVIRONMENTS string;
+
+const (
+	DEVELOPMENT ENVIRONMENTS = "development"
+	PRODUCTION ENVIRONMENTS = "production"
+) 
 type Configs struct {
-	PORT string
-	DATABASE_URL string
+	PORT string 
+	ENVIRONMENT string
+	DB_USER string
+	DB_PASSWORD string
+	DB_NAME string
+	DB_HOST string
+	DB_PORT string
+	DB_URL string
+	REDIS_URL string
 }
 
 // Load Env variables and return a Configs struct
@@ -31,8 +44,9 @@ func LoadConfigs() Configs {
 
 	log.Println("Config loaded successfully")
 
-	return Configs{
-		PORT:         viper.GetString("PORT"),
-		DATABASE_URL: viper.GetString("DATABASE_URL"),
-	}
+	var configs Configs;
+
+	viper.Unmarshal(&configs)
+
+	return configs
 }
