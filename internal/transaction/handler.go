@@ -41,6 +41,7 @@ func (h *TransactionHandler) GetUserTransactions(c *gin.Context) {
 			Amount: transaction.Amount,
 			TransactionType: string(transaction.TransactionType),
 			Status: string(transaction.Status),
+			CreatedAt: transaction.CreatedAt,
 		})
 	}
 

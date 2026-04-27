@@ -31,7 +31,7 @@ type SimulateBankTransferResponse struct {
 func (s *ThirdPartyPaymentAPI) SimulateBankTransfer(request SimulateBankTransferRequest) (SimulateBankTransferResponse, error) {
 
 	// Simulates http call to third party payment API to initiate bank transfer
-	time.Sleep(5 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	// Implementation might also include a webhook callback to update transfer status asynchronously after processing is complete, but for simplicity we will just simulate a successful transfer here.
 

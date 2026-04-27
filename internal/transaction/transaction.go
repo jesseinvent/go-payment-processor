@@ -28,5 +28,5 @@ type Transaction struct {
 	TransactionBeneficiaryDetails   string				`gorm:"null"`
 	Status                      	TransactionStatus  	`gorm:"not null;default:'pending'"`
 	TransactionType             	TransactionType    	`gorm:"not null"`
-	Metadata                    	string				`gorm:"type:jsonb;null"`
+	Metadata                    	string				`gorm:"type:string;null"`
 }

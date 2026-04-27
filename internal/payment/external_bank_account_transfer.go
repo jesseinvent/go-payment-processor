@@ -69,6 +69,12 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	// Generate unique reference for transfer
 	ref := utils.HashString(fmt.Sprintf("bank-transfer-%d-%d-%d", userId, currencyId, time.Now().Unix()))
 
+	currency, err := s.currencyStore.GetByID(currencyId)
+
+	if currency == nil {
+		return "", fmt.Errorf("Currency not found.")
+	}
+
 	// Using a database transaction for atomicity and to prevent race conditions
 	err = s.walletStore.DB.Transaction(func(tx *gorm.DB) error {
 		// Get sender's currency wallet and lock for update to prevent race conditions
@@ -115,7 +121,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 			Status:                  transaction.Pending,
 		}
 
-		err =tx.Save(debitTransaction).Error
+		err = tx.Save(debitTransaction).Error
 
 		if err != nil {
 			return fmt.Errorf("Could not create transaction record - %w", err)
@@ -125,13 +131,17 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 		return nil
 	})
 
+	if err != nil {
+		return "", err
+	}
+
 	// In a real scalable production system, the processes below (initiating third party transfer and updating transaction status) would be handled asynchronously using a message queue to improve latency of the API and reliability of the transfer.
 
 	thirdPartyApiRequest := thirdparty.SimulateBankTransferRequest{
 		UserId: userId,
 		Amount: amount,
 		Reference: ref,
-		Currency: fmt.Sprintf("%d", currencyId),
+		Currency: currency.Symbol,
 		BeneficiaryName: beneficiaryDetails.BeneficiaryName,
 		BeneficiaryAccountNumber: beneficiaryDetails.BeneficiaryAccountNumber,
 		BeneficiaryBankCode: beneficiaryDetails.BeneficiaryBankCode,
@@ -146,7 +156,13 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 		return "", fmt.Errorf("Error initiating bank transfer with third party API - %w", err)
 	}
 
-	// If API Request then reverse wallet debit and update transaction status to failed (Improvement)
+	thirdPartyResponseJson, err := json.Marshal(thirdPartyResponse)
+
+	if err != nil {
+		return "", fmt.Errorf("Error converting third party response to JSON - %w", err)
+	}
+
+	// If API Request fails then reverse wallet debit and update transaction status to failed (Improvement)
 
 	// Convert beneficiary details to json string
 	beneficiaryDetailsJson, err := json.Marshal(beneficiaryDetails)
@@ -161,7 +177,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	err = s.transactionStore.DB.Model(&transaction.Transaction{}).Where("reference = ?", ref).Updates(map[string]interface{}{
 		"transaction_beneficiary_details": beneficiaryDetailsJsonStr,
 		"status": transaction.Completed,
-		"metadata": thirdPartyResponse,
+		"metadata": string(thirdPartyResponseJson), // Store third party response for audit and reconciliation purposes
 	}).Error
 
 	if err != nil {
