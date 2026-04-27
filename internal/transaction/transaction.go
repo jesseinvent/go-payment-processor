@@ -17,14 +17,16 @@ const (
 )	
 type Transaction struct {
 	gorm.Model
-	UserId      				uint					
-	WalletId					uint	
-	CurrencyId 					uint
-	PreviousWalletBalance 		int              `gorm:"type:not null"`
-	Amount                      int
-	CurrentWalletBalance        int				   `gorm:"type:not null"`
-	Internal                    bool			   
-	ExternalPaymentDestination  string
-	Status                      TransactionStatus  `gorm:"type:user_status default:'active'"`
-	TransactionType             TransactionType    `gorm:"type:transaction_type"`
+	UserId      					uint				`gorm:"not null"`	
+	WalletId						uint				`gorm:"not null"`
+	CurrencyId 						uint				`gorm:"not null"`
+	PreviousWalletBalance 			int              	`gorm:"not null"`
+	Reference 						string				`gorm:"not null"`
+	Amount                     		int					`gorm:"not null"`
+	CurrentWalletBalance        	int				   	`gorm:"not null"`
+	Internal                    	bool			   	`gorm:"not null;default:false"`
+	TransactionBeneficiaryDetails   string				`gorm:"null"`
+	Status                      	TransactionStatus  	`gorm:"not null;default:'pending'"`
+	TransactionType             	TransactionType    	`gorm:"not null"`
+	Metadata                    	string				`gorm:"type:jsonb;null"`
 }

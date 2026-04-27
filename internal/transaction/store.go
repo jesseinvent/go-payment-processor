@@ -3,22 +3,22 @@ package transaction
 import "gorm.io/gorm"
 
 type TransactionStore struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func NewTransactionStore(db *gorm.DB) TransactionStore {
-	return TransactionStore{db: db}
+	return TransactionStore{DB: db}
 }
 
 func (s *TransactionStore) Create(transaction *Transaction) error {
-	return s.db.Create(transaction).Error
+	return s.DB.Create(transaction).Error
 }
 
 func (s *TransactionStore) FindByWalletId(walletId uint) ([]Transaction, error) {
 
 	var transactions []Transaction
 	
-	err := s.db.Where(&Transaction{
+	err := s.DB.Where(&Transaction{
 		WalletId: walletId,
 	}).Find(&transactions).Error
 
@@ -33,7 +33,7 @@ func (s *TransactionStore) FindByUserId(userId uint) ([]Transaction, error) {
 
 	var transactions []Transaction
 	
-	err := s.db.Where(&Transaction{
+	err := s.DB.Where(&Transaction{
 		UserId: userId,
 	}).Find(&transactions).Error
 

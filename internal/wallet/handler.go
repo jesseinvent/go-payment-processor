@@ -12,8 +12,8 @@ type WalletHandler struct {
 	service WalletService
 }
 
-func NewWalletHandler(service WalletService) WalletHandler {
-	return WalletHandler{service: service}
+func NewWalletHandler(service WalletService) *WalletHandler {
+	return &WalletHandler{service: service}
 }
 
 func (h *WalletHandler) CreateWallet (c *gin.Context) {
@@ -81,5 +81,5 @@ func (h *WalletHandler) GetUserWallets (c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.Success("User wallets retrieved", walletsResponse))
-
 }
+

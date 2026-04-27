@@ -27,7 +27,7 @@ func (h *CurrencyHandler) CreateCurrency(c *gin.Context) {
 		return
 	}
 
-	currency, err := h.currencyService.Create(createCurrencyDto.Name, createCurrencyDto.Symbol, createCurrencyDto.IconUrl)
+	currency, err := h.currencyService.Create(createCurrencyDto.Name, createCurrencyDto.Symbol, createCurrencyDto.IconUrl, createCurrencyDto.BaseUnitFactor)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.Error("Could not create currency."))
@@ -39,6 +39,7 @@ func (h *CurrencyHandler) CreateCurrency(c *gin.Context) {
 		Name: currency.Name,
 		Symbol: currency.Symbol,
 		IconUrl: currency.IconUrl,
+		BaseUnitFactor: currency.BaseUnitFactor,
 		CreatedAt: currency.CreatedAt,
 	}
 
@@ -53,6 +54,19 @@ func (h *CurrencyHandler) getCurrencies(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.Success("Successfully retrieved currencies", currencies))
+	var	currencyResponses []CurrencyResponse
+
+	for _, currency := range currencies {
+		currencyResponses = append(currencyResponses, CurrencyResponse{
+			ID: currency.ID,
+			Name: currency.Name,
+			Symbol: currency.Symbol,
+			IconUrl: currency.IconUrl,
+			BaseUnitFactor: currency.BaseUnitFactor,
+			CreatedAt: currency.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, response.Success("Successfully retrieved currencies", currencyResponses))
 
 }

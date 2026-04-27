@@ -11,6 +11,7 @@ import (
 	"github.com/jesseinvent/go-payment-processor/internal/configs"
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
 	"github.com/jesseinvent/go-payment-processor/internal/db"
+	"github.com/jesseinvent/go-payment-processor/internal/pkg/redis"
 	"github.com/jesseinvent/go-payment-processor/internal/router"
 	"github.com/jesseinvent/go-payment-processor/internal/transaction"
 	"github.com/jesseinvent/go-payment-processor/internal/wallet"
@@ -41,13 +42,20 @@ func RunServer() {
 	}
 
 	// Use migrations on production
-	if config.ENVIRONMENT == "development" {
+	// if config.ENVIRONMENT == "development" {
 		dbConn.AutoMigrate(
 			&user.User{}, 
 			&transaction.Transaction{}, 
 			&wallet.Wallet{}, 
 			&currency.Currency{},
 		)
+	// }
+
+	// Connect to Redis
+	redisService, err := redis.NewRedisService(config.REDIS_URL)
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	r.Use(gin.Logger())
@@ -61,7 +69,7 @@ func RunServer() {
 	})
 
 	// Register all routes
-	router.RegisterRoutes(r, dbConn)
+	router.RegisterRoutes(r, dbConn, redisService)
 
 	// Start server
 	log.Println("Server running on: ", port)

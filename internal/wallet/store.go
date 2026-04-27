@@ -7,22 +7,22 @@ import (
 )
 
 type WalletStore struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func NewWalletStore(db *gorm.DB) WalletStore {
-	return WalletStore{db: db}
+	return WalletStore{DB: db}
 }
 
 func (s *WalletStore) Create(wallet *Wallet) error {
-	return s.db.Create(wallet).Error
+	return s.DB.Create(wallet).Error
 }
 
 func (s *WalletStore) GetByID(id uint) (*Wallet, error) {
 
 	var wallet Wallet
 	
-	err := s.db.First(&wallet, id).Error
+	err := s.DB.First(&wallet, id).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -39,7 +39,7 @@ func (s *WalletStore) GetByUserIdAndCurrencyId(userId uint, currencyId uint) (*W
 
 	var wallet Wallet
 	
-	err := s.db.Where(&Wallet{
+	err := s.DB.Where(&Wallet{
 		UserId: userId,
 		CurrencyId: currencyId,
 	}).First(&wallet).Error
@@ -59,7 +59,7 @@ func (s *WalletStore) FindByUserId(userId uint) ([]Wallet, error) {
 
 	var wallets []Wallet
 
-	err := s.db.Where(&Wallet{
+	err := s.DB.Where(&Wallet{
 		UserId: userId,
 	}).Find(&wallets).Error
 
@@ -73,3 +73,4 @@ func (s *WalletStore) FindByUserId(userId uint) ([]Wallet, error) {
 
 	return wallets, nil
 }
+

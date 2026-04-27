@@ -2,7 +2,6 @@ package redis
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -10,12 +9,11 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type Redis struct {
+type RedisService struct {
 	redisClient *redis.Client
 }
 
-
-func NewRedis(redisUrl string) (*Redis, error) {
+func NewRedisService(redisUrl string) (*RedisService, error) {
 
  	redisClient := redis.NewClient(&redis.Options{
 		Addr: redisUrl,
@@ -27,11 +25,10 @@ func NewRedis(redisUrl string) (*Redis, error) {
 		return nil, fmt.Errorf("Failed to connect to Redis: %w", err)
 	}
 
-	return &Redis{redisClient: redisClient}, nil
+	return &RedisService{redisClient: redisClient}, nil
 }
 
-
-func (r *Redis) Set(ctx context.Context, key string, value string, ttl time.Duration) (bool, error) {
+func (r *RedisService) Set(ctx context.Context, key string, value string, ttl time.Duration) (bool, error) {
 
 	err := r.redisClient.Set(ctx, key, value, ttl).Err();
 
@@ -43,18 +40,21 @@ func (r *Redis) Set(ctx context.Context, key string, value string, ttl time.Dura
 	return true, nil;
 }
 
-func (r *Redis) Get(ctx context.Context, key string) (string, error) {
+func (r *RedisService) Get(ctx context.Context, key string) (string, error) {
 
 	value, err := r.redisClient.Get(ctx, key).Result();
 
-	if err == redis.Nil {
-		return "", errors.New("Key does not exist")
+	if err != nil {
+		if err == redis.Nil {
+			return "", nil
+		}
+		return "", fmt.Errorf("Error getting value from redis - %s", err.Error())
 	}
 
 	return value, nil
  }
 
-func (r *Redis) Delete(ctx context.Context, key string) (bool, error) {
+func (r *RedisService) Delete(ctx context.Context, key string) (bool, error) {
 
 	err := r.redisClient.Del(ctx, key).Err();
 
