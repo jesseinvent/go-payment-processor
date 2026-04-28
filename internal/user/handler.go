@@ -69,6 +69,12 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 
 	user, err := h.userService.GetByID(id)
 
+	if err != nil {
+		log.Print(err.Error())
+		c.JSON(http.StatusBadRequest, response.Error("Error getting user"))
+		return
+	}
+
 	if user == nil {
 		c.JSON(http.StatusBadRequest, response.Error("User not found"))
 		return
@@ -78,7 +84,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 		ID: user.ID,
 		Email: user.Email,
 		PhoneNumber: user.PhoneNumber,
-		Name: user.PhoneNumber,
+		Name: user.Name,
 		CreatedAt: user.CreatedAt,
   	}
 

@@ -43,7 +43,7 @@ func ConnectToRedisWithRetry(redisUrl string, maxRetries int, retryInterval time
 		time.Sleep(retryInterval)
 	}
 
-	return nil, fmt.Errorf("Could not connect to Redis after %d attempts: %w", maxRetries, err)
+	return nil, fmt.Errorf("could not connect to Redis after %d attempts: %w", maxRetries, err)
 }
 
 func (r *RedisService) Set(ctx context.Context, key string, value string, ttl time.Duration) (bool, error) {
@@ -66,7 +66,7 @@ func (r *RedisService) Get(ctx context.Context, key string) (string, error) {
 		if err == redis.Nil {
 			return "", nil
 		}
-		return "", fmt.Errorf("Error getting value from redis - %s", err.Error())
+		return "", fmt.Errorf("error getting value from redis - %s", err.Error())
 	}
 
 	return value, nil

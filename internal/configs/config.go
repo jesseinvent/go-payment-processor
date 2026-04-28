@@ -46,7 +46,11 @@ func LoadConfigs() Configs {
 
 	var configs Configs;
 
-	viper.Unmarshal(&configs)
+ 	err = viper.Unmarshal(&configs)
+
+	if err != nil {
+		log.Fatal("Error unmarshalling config: ", err)
+	}
 
 	return configs
 }

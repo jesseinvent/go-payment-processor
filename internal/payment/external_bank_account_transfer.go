@@ -59,7 +59,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	existingRef, err := s.redisService.Get(ctx, idempotencyKey)
 
 	if err != nil {
-		return "", fmt.Errorf("Error checking idempotency key - %w", err)
+		return "", fmt.Errorf("error checking idempotency key - %w", err)
 	}
 
 	if existingRef != "" {
@@ -70,6 +70,10 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	ref := utils.HashString(fmt.Sprintf("bank-transfer-%d-%d-%d", userId, currencyId, time.Now().Unix()))
 
 	currency, err := s.currencyStore.GetByID(currencyId)
+
+	if err != nil {
+		return "", fmt.Errorf("error getting currency - %w", err)
+	}
 
 	if currency == nil {
 		return "", fmt.Errorf("Currency not found.")
@@ -84,13 +88,17 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				return fmt.Errorf("Currency wallet not found for user.")
+				return fmt.Errorf("Currency wallet not found for user")
 			}
 
-			return fmt.Errorf("Error getting currency wallet - %w", err)
+			return fmt.Errorf("error getting currency wallet - %w", err)
 		}
 
 		amountInMinorUnit, err := s.currencyService.CalculateCurrencyAmountInBaseUnit(currencyId, amount)
+
+		if err != nil {
+			return fmt.Errorf("error calculating currency amount in base unit - %w", err)
+		}
 
 		// Check if sender has sufficient balance
 		if senderCurrencyWallet.Balance < uint(amountInMinorUnit) {
@@ -105,7 +113,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 		err = tx.Save(senderCurrencyWallet).Error
 
 		if err != nil {
-			return fmt.Errorf("Could not update wallet balance - %w", err)
+			return fmt.Errorf("could not update wallet balance - %w", err)
 		}
 
 		// Create debit transaction record with pending status
@@ -124,7 +132,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 		err = tx.Save(debitTransaction).Error
 
 		if err != nil {
-			return fmt.Errorf("Could not create transaction record - %w", err)
+			return fmt.Errorf("could not create transaction record - %w", err)
 		}
 
 		// Commit transaction to save changes to database
@@ -153,13 +161,13 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	thirdPartyResponse, err := s.thirdPartyService.SimulateBankTransfer(thirdPartyApiRequest)
 
 	if err != nil {
-		return "", fmt.Errorf("Error initiating bank transfer with third party API - %w", err)
+		return "", fmt.Errorf("error initiating bank transfer with third party API - %w", err)
 	}
 
 	thirdPartyResponseJson, err := json.Marshal(thirdPartyResponse)
 
 	if err != nil {
-		return "", fmt.Errorf("Error converting third party response to JSON - %w", err)
+		return "", fmt.Errorf("error converting third party response to JSON - %w", err)
 	}
 
 	// If API Request fails then reverse wallet debit and update transaction status to failed (Improvement)
@@ -168,7 +176,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	beneficiaryDetailsJson, err := json.Marshal(beneficiaryDetails)
 
 	if err != nil {
-		return "", fmt.Errorf("Error converting beneficiary details to JSON - %w", err)
+		return "", fmt.Errorf("error converting beneficiary details to JSON - %w", err)
 	}
 
 	beneficiaryDetailsJsonStr := string(beneficiaryDetailsJson)
@@ -181,14 +189,14 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	}).Error
 
 	if err != nil {
-		return "", fmt.Errorf("Error updating transaction record - %w", err)
+		return "", fmt.Errorf("error updating transaction record - %w", err)
 	}
 
 	// Store transfer reference in redis with idempotency key to prevent duplicate processing
 	_, err = s.redisService.Set(ctx, idempotencyKey, ref, time.Hour * 24)
 
 	if err != nil {
-		return "", fmt.Errorf("Error storing transfer reference in Redis - %w", err)
+		return "", fmt.Errorf("error storing transfer reference in Redis - %w", err)
 	}
 
 	// Return transfer reference

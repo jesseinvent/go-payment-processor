@@ -26,18 +26,18 @@ func (s *WalletService) CreateWallet(currencyId, userId uint) (*Wallet, error) {
 	currency, err := s.currencyStore.GetByID(currencyId);
 
 	if err != nil {
-		return nil, fmt.Errorf("Error getting currency - %w", err)
+		return nil, fmt.Errorf("error getting currency - %w", err)
 	}
 
 	if currency == nil {
-		return nil, fmt.Errorf("Currency does not exist.")
+		return nil, fmt.Errorf("Currency does not exist")
 	}
 
 	// Validate user does not have wallet with currency
 	userCurrencyWallet, err := s.walletStore.GetByUserIdAndCurrencyId(userId, currencyId)
 
 	if err != nil {
-		return nil, fmt.Errorf("Could not get user currency wallet.")
+		return nil, fmt.Errorf("could not get user currency wallet")
 	}
 
 	if userCurrencyWallet != nil {
@@ -52,7 +52,7 @@ func (s *WalletService) CreateWallet(currencyId, userId uint) (*Wallet, error) {
 	err = s.walletStore.Create(wallet)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error creating wallet - %w", err)
+		return nil, fmt.Errorf("error creating wallet - %w", err)
 	}
 
 	return wallet, nil

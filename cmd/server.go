@@ -45,12 +45,16 @@ func RunServer() {
 
 	// Use migrations on production
 	if config.ENVIRONMENT == "development" {
-		dbConn.AutoMigrate(
+	 err = dbConn.AutoMigrate(
 			&user.User{}, 
 			&transaction.Transaction{}, 
 			&wallet.Wallet{}, 
 			&currency.Currency{},
 		)
+
+	 if err != nil {
+		log.Fatal("Error running auto migrations - ", err)
+	 }
 	}
 
 	// Connect to Redis
@@ -76,7 +80,11 @@ func RunServer() {
 	// Start server
 	log.Println("Server running on: ", port)
 
-	r.Run(":" + port)
+	err = r.Run(":" + port)
+	
+	if err != nil {
+		log.Fatal("Error starting server - ", err)
+	}
 }
 
 func ConnectToDBWithRetry(dsn string) (*gorm.DB, error) { 

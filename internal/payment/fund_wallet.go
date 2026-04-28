@@ -47,7 +47,7 @@ func (s *FundWalletService) FundUserWallet(userId, walletId uint, amount float64
 
 	if err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("Error getting wallet - %w", err)
+		return nil, fmt.Errorf("error getting wallet - %w", err)
 	}
 
 	// Validate wallet belongs to user
@@ -64,7 +64,7 @@ func (s *FundWalletService) FundUserWallet(userId, walletId uint, amount float64
 
 	if err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("Error calculating amount in minor unit - %w", err)
+		return nil, fmt.Errorf("error calculating amount in minor unit - %w", err)
 	}
 
 	// Credit wallet
@@ -72,7 +72,7 @@ func (s *FundWalletService) FundUserWallet(userId, walletId uint, amount float64
 
 	if err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("Error updating wallet balance - %w", err)
+		return nil, fmt.Errorf("error updating wallet balance - %w", err)
 	}
 
 	ref := fmt.Sprintf("fund-%d-%d", walletId, time.Now().Unix())
@@ -95,14 +95,14 @@ func (s *FundWalletService) FundUserWallet(userId, walletId uint, amount float64
 
 	if err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("Error creating transaction record - %w", err)
+		return nil, fmt.Errorf("error creating transaction record - %w", err)
 	}	
 
 	err = tx.Commit().Error
 
 	if err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("Error committing transaction - %w", err)
+		return nil, fmt.Errorf("error committing transaction - %w", err)
 	}
 
 	return wallet, nil

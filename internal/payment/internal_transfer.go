@@ -53,7 +53,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 	// Check redis for existing transfer with same idempotency key to prevent duplicate processing
 	 // If key exists, return existing reference without processing transfer again
 	if err != nil {
-		return "", fmt.Errorf("Error checking idempotency key - %w", err)
+		return "", fmt.Errorf("error checking idempotency key - %w", err)
 	}
 
 	// If key exists, return existing reference without processing transfer again
@@ -80,7 +80,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 					return fmt.Errorf("Sender wallet not found for the specified currency.")
 				}
 
-				return fmt.Errorf("Error getting sender wallet - %w", err)
+				return fmt.Errorf("error getting sender wallet - %w", err)
 			}
 
 			// Lock receiver currency wallet for update
@@ -91,7 +91,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 					return fmt.Errorf("Receiver wallet not found for the specified currency.")
 				}
 
-				return fmt.Errorf("Error getting receiver wallet - %w", err)
+				return fmt.Errorf("error getting receiver wallet - %w", err)
 			}
 
 			prevSenderBalance := senderCurrencyWallet.Balance
@@ -101,7 +101,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 			amountInMinorUnit, err := s.currencyService.CalculateCurrencyAmountInBaseUnit(currencyId, float64(amount))
 
 			if err != nil {
-				return fmt.Errorf("Error calculating amount in minor unit - %w", err)
+				return fmt.Errorf("error calculating amount in minor unit - %w", err)
 			}
 
 
@@ -116,7 +116,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 			err = tx.Save(senderCurrencyWallet).Error
 
 			if err != nil {
-				return fmt.Errorf("Error updating sender wallet - %w", err)
+				return fmt.Errorf("error updating sender wallet - %w", err)
 			}
 
 			// Create debit transaction record for sender
@@ -135,7 +135,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 			err = tx.Create(senderDebitTransaction).Error
 
 			if err != nil {
-				return fmt.Errorf("Error creating sender transaction record - %w", err)
+				return fmt.Errorf("error creating sender transaction record - %w", err)
 			}
 
 			// Credit receiver wallet
@@ -144,7 +144,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 			err = tx.Save(receiverCurrencyWallet).Error
 
 			if err != nil {
-				return fmt.Errorf("Error updating receiver wallet - %w", err)
+				return fmt.Errorf("error updating receiver wallet - %w", err)
 			}
 
 			// Create credit transaction record for receiver
@@ -163,21 +163,21 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 			err = tx.Create(receiverCreditTransaction).Error
 
 			if err != nil {
-				return fmt.Errorf("Error creating receiver transaction record - %w", err)
+				return fmt.Errorf("error creating receiver transaction record - %w", err)
 			}
 
 			return nil
 		})	
 
 	if err != nil {
-		return "", fmt.Errorf("Error processing internal transfer - %w", err)
+		return "", fmt.Errorf("error processing internal transfer - %w", err)
 	}
 
 	// Store transfer reference in redis with idempotency key to prevent duplicate processing
 	_, err = s.redisService.Set(ctx, idempotencyKey, ref, time.Hour * 24)
 
 	if err != nil {
-		return "", fmt.Errorf("Error setting idempotency key in redis - %w", err)
+		return "", fmt.Errorf("error setting idempotency key in redis - %w", err)
 	}
 
 	return ref, nil
