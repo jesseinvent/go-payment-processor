@@ -33,15 +33,15 @@ run:
 
 # Build and run with Docker
 build-docker:
-	docker-compose up --build -d
+	docker compose up --build -d
 
 # Stop and remove Docker containers
 docker-down:
-	docker-compose down
+	docker compose down
 
 # View logs
 logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 DB_URL=postgres://user:password@localhost:5432/postgres?sslmode=disable
 
