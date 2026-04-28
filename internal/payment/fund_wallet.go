@@ -39,7 +39,7 @@ func (s *FundWalletService) FundUserWallet(userId, walletId uint, amount float64
 
 	if amount <= 0 {
 		tx.Rollback()
-		return nil, fmt.Errorf("Amount must be greater than zero.")
+		return nil, fmt.Errorf("amount must be greater than zero")
 	}
 		
 	// Lock wallet record for update to prevent race conditions
@@ -53,7 +53,7 @@ func (s *FundWalletService) FundUserWallet(userId, walletId uint, amount float64
 	// Validate wallet belongs to user
 	if wallet.UserId != userId {
 		tx.Rollback()
-		return nil, fmt.Errorf("Unauthorized to fund this wallet.")
+		return nil, fmt.Errorf("unauthorized to fund this wallet")
 	}
 
 	prevBalance := wallet.Balance

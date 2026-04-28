@@ -30,7 +30,7 @@ func (s *WalletService) CreateWallet(currencyId, userId uint) (*Wallet, error) {
 	}
 
 	if currency == nil {
-		return nil, fmt.Errorf("Currency does not exist")
+		return nil, fmt.Errorf("currency does not exist")
 	}
 
 	// Validate user does not have wallet with currency

@@ -76,7 +76,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	}
 
 	if currency == nil {
-		return "", fmt.Errorf("Currency not found.")
+		return "", fmt.Errorf("currency not found")
 	}
 
 	// Using a database transaction for atomicity and to prevent race conditions
@@ -88,7 +88,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				return fmt.Errorf("Currency wallet not found for user")
+				return fmt.Errorf("currency wallet not found for user")
 			}
 
 			return fmt.Errorf("error getting currency wallet - %w", err)

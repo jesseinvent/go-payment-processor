@@ -69,7 +69,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 			}
 
 			if amount <= 0 {
-				return fmt.Errorf("Amount must be greater than zero.")
+				return fmt.Errorf("amount must be greater than zero")
 			}
 
 			// Lock sender currency wallet for update
