@@ -16,6 +16,17 @@ services:
       - postgres-db
       - redis  
 
+  migration:
+    build: .
+    run: |
+      curl -L https://github.com/golang-migrate/migrate/releases/latest/download/migrate.linux-amd64.tar.gz | tar xvz
+      sudo mv migrate /usr/local/bin/
+    command: ["make", "migrate-up"]
+    environment:
+      - DB_URL=postgres://user:password@postgres-db:5432/postgres?sslmode=disable
+    depends_on:
+      - postgres-db    
+
   postgres-db:
     image: postgres:latest
     environment:
@@ -24,14 +35,10 @@ services:
       - POSTGRES_PASSWORD=password
     ports:
       - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data  
 
   redis:
     image: redis:latest
     ports:
       - "6379:6379"    
 
-volumes:
-  postgres-data: 
 
