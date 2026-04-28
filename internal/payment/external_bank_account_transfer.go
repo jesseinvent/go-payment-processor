@@ -102,7 +102,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 
 		// Check if sender has sufficient balance
 		if senderCurrencyWallet.Balance < uint(amountInMinorUnit) {
-			return fmt.Errorf("Insufficient wallet balance.")
+			return fmt.Errorf("insufficient wallet balance")
 		}
 
 		prevWalletBalance := senderCurrencyWallet.Balance

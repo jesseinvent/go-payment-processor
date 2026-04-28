@@ -51,8 +51,7 @@ func (r *RedisService) Set(ctx context.Context, key string, value string, ttl ti
 	err := r.redisClient.Set(ctx, key, value, ttl).Err();
 
 	if err != nil {
-		log.Println("Error setting value in redis", err);
-		return false, err;
+		return false, fmt.Errorf("error setting value in redis - %w", err)
 	}
 
 	return true, nil;
@@ -66,7 +65,7 @@ func (r *RedisService) Get(ctx context.Context, key string) (string, error) {
 		if err == redis.Nil {
 			return "", nil
 		}
-		return "", fmt.Errorf("error getting value from redis - %s", err.Error())
+		return "", fmt.Errorf("error getting value from redis - %w", err)
 	}
 
 	return value, nil
@@ -77,8 +76,7 @@ func (r *RedisService) Delete(ctx context.Context, key string) (bool, error) {
 	err := r.redisClient.Del(ctx, key).Err();
 
 	if err != nil {
-		log.Println("Error deleting in redis", err)
-		return false, err
+		return false, fmt.Errorf("error deleting value from redis - %w", err)
 	}
 
 	return true, nil

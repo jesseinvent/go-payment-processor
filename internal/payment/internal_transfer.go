@@ -65,7 +65,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 	err = s.walletStore.DB.Transaction(func(tx *gorm.DB) error {
 
 			if senderUserId == receiverUserId {
-				return fmt.Errorf("You cannot transfer to yourself.")
+				return fmt.Errorf("you cannot transfer to yourself")
 			}
 
 			if amount <= 0 {
@@ -77,7 +77,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 
 			if err != nil {
 				if err == gorm.ErrRecordNotFound {
-					return fmt.Errorf("Sender wallet not found for the specified currency.")
+					return fmt.Errorf("sender wallet not found for the specified currency")
 				}
 
 				return fmt.Errorf("error getting sender wallet - %w", err)
@@ -88,7 +88,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 
 			if err != nil {
 				if err == gorm.ErrRecordNotFound {
-					return fmt.Errorf("Receiver wallet not found for the specified currency.")
+					return fmt.Errorf("receiver wallet not found for the specified currency")
 				}
 
 				return fmt.Errorf("error getting receiver wallet - %w", err)
@@ -107,7 +107,7 @@ func (s *InternalTransferService) ProcessInternalWalletTransfer(senderUserId, re
 
 			// Validate sender has sufficient balance
 			if senderCurrencyWallet.Balance < uint(amountInMinorUnit) {
-				return fmt.Errorf("Insufficient balance in sender wallet.")
+				return fmt.Errorf("insufficient balance in sender wallet")
 			}
 
 			// Debit sender wallet

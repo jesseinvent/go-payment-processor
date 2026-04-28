@@ -43,7 +43,7 @@ func (s *CurrencyService) CalculateCurrencyAmountInBaseUnit(currencyId uint, amo
 	}
 
 	if currency == nil {
-		return 0, fmt.Errorf("Currency not found")
+		return 0, fmt.Errorf("currency not found")
 	}
 
 	return int(amount * float64(currency.BaseUnitFactor)), nil

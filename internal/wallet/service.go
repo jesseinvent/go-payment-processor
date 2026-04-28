@@ -41,7 +41,7 @@ func (s *WalletService) CreateWallet(currencyId, userId uint) (*Wallet, error) {
 	}
 
 	if userCurrencyWallet != nil {
-		return nil, fmt.Errorf("UserWallet with this currency already exists")
+		return nil, fmt.Errorf("userWallet with this currency already exists")
 	}
 
 	wallet := &Wallet{
