@@ -11,7 +11,7 @@ tidy:
 	go mod tidy
 
 # Lint code
-lint:
+vet:
 	go vet ./...
 
 test:

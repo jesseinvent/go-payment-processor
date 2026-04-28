@@ -32,11 +32,11 @@ jobs:
               run: |
                  make test
 
-            - Vulnerability Check
+            - name: Vulnerability Check
               run: |
                 go install golang.org/x/vuln/cmd/govulncheck@latest
                 govulncheck ./...
-                
+
             - name: Build and Run with Docker
               run: |
                   make build-docker
