@@ -18,7 +18,8 @@ jobs:
                   go-version-file: go.mod
             - name: Install golangci-lint
               run: |
-                  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.52.2
+                go install golang.org/x/vuln/cmd/govulncheck@latest
+                govulncheck ./...
 
             - name: Vet
               run: |
