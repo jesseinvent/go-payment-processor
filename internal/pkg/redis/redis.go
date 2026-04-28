@@ -15,17 +15,35 @@ type RedisService struct {
 
 func NewRedisService(redisUrl string) (*RedisService, error) {
 
- 	redisClient := redis.NewClient(&redis.Options{
-		Addr: redisUrl,
-	})
-
-	err := redisClient.Ping(context.Background()).Err()
+	redisClient, err := ConnectToRedisWithRetry(redisUrl, 5, 2*time.Second)
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to Redis: %w", err)
+		return nil, err
 	}
 
 	return &RedisService{redisClient: redisClient}, nil
+}
+
+func ConnectToRedisWithRetry(redisUrl string, maxRetries int, retryInterval time.Duration) (*redis.Client, error) {
+	var redisClient *redis.Client
+	var err error
+
+	for i := range maxRetries {
+	 	redisClient = redis.NewClient(&redis.Options{
+			Addr: redisUrl,
+		})
+
+		err = redisClient.Ping(context.Background()).Err()
+
+		if err == nil {
+			return redisClient, nil
+		}
+
+		log.Printf("Failed to connect to Redis (attempt %d/%d): %v", i+1, maxRetries, err)
+		time.Sleep(retryInterval)
+	}
+
+	return nil, fmt.Errorf("Could not connect to Redis after %d attempts: %w", maxRetries, err)
 }
 
 func (r *RedisService) Set(ctx context.Context, key string, value string, ttl time.Duration) (bool, error) {
