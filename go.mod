@@ -1,6 +1,6 @@
 module github.com/jesseinvent/go-payment-processor
 
-go 1.26.0
+go 1.26.2
 
 require (
 	github.com/spf13/viper v1.21.0
