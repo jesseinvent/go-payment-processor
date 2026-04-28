@@ -55,6 +55,7 @@ func (s *WalletStore) GetByUserIdAndCurrencyId(userId uint, currencyId uint) (*W
 	return &wallet, nil
 }
 
+
 func (s *WalletStore) FindByUserId(userId uint) ([]Wallet, error) {
 
 	var wallets []Wallet

@@ -34,11 +34,7 @@ func (s *WalletService) CreateWallet(currencyId, userId uint) (*Wallet, error) {
 	}
 
 	// Validate user does not have wallet with currency
-	userCurrencyWallet, err := s.walletStore.GetByUserIdAndCurrencyId(userId, currencyId)
-
-	if err != nil {
-		return nil, fmt.Errorf("could not get user currency wallet")
-	}
+	userCurrencyWallet, _ := s.walletStore.GetByUserIdAndCurrencyId(userId, currencyId)
 
 	if userCurrencyWallet != nil {
 		return nil, fmt.Errorf("userWallet with this currency already exists")
