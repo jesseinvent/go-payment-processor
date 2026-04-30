@@ -1,14 +1,18 @@
 package user
 
-type UserService struct {
+type UserService interface {
+	Create(email, phoneNumber, name string) (*User, error)
+	GetByID(id uint) (*User, error) 
+}
+type userService struct {
 	userStore UserStore
 }
 
 func NewUserService(userStore UserStore) UserService {
-	return UserService{userStore: userStore}
+	return &userService{userStore: userStore}
 }
 
-func (s *UserService) Create(email, phoneNumber, name string) (*User, error) {
+func (s *userService) Create(email, phoneNumber, name string) (*User, error) {
 	user := &User{
 		Email: email,
 		PhoneNumber: phoneNumber,
@@ -24,6 +28,6 @@ func (s *UserService) Create(email, phoneNumber, name string) (*User, error) {
 	return user, nil
 }
 
-func (s *UserService) GetByID(id int) (*User, error) {
+func (s *userService) GetByID(id uint) (*User, error) {
 	return s.userStore.GetByID(id)
 }

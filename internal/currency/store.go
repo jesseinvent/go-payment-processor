@@ -6,19 +6,25 @@ import (
 	"gorm.io/gorm"
 )
 
-type CurrencyStore struct {
+type CurrencyStore interface {
+	Create(*Currency) error
+	GetAll() ([]Currency, error)
+	GetByID(id uint) (*Currency, error)
+}
+
+type currencyStore struct {
 	db *gorm.DB
 }
 
 func NewCurrencyStore(db *gorm.DB) CurrencyStore {
-	return CurrencyStore{db: db}
+	return &currencyStore{db: db}
 }
 
-func (s *CurrencyStore) Create(currency *Currency) error {
+func (s *currencyStore) Create(currency *Currency) error {
 	return s.db.Create(currency).Error
 }
 
-func (s *CurrencyStore) GetAll() ([]Currency, error) {
+func (s *currencyStore) GetAll() ([]Currency, error) {
 
 	var currencies []Currency
 	
@@ -33,7 +39,7 @@ func (s *CurrencyStore) GetAll() ([]Currency, error) {
 	return currencies, nil
 }
 
-func (s *CurrencyStore) GetByID(id uint) (*Currency, error) {
+func (s *currencyStore) GetByID(id uint) (*Currency, error) {
 
 	var currency Currency
 	

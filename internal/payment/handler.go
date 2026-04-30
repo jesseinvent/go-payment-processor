@@ -10,15 +10,15 @@ import (
 )
 
 type PaymentHandler struct {
-	fundWalletService *FundWalletService
-	internalTransferService *InternalTransferService
-	externalBankTransferService *ExternalBankAccountTransferService
+	fundWalletService FundWalletService
+	internalTransferService InternalTransferService
+	externalBankTransferService ExternalBankAccountTransferService
 }
 
 func NewPaymentHandler(
-	fundWalletService *FundWalletService, 
-	internalTransferService *InternalTransferService, 
-	externalBankTransferService *ExternalBankAccountTransferService,
+	fundWalletService FundWalletService, 
+	internalTransferService InternalTransferService, 
+	externalBankTransferService ExternalBankAccountTransferService,
 ) *PaymentHandler {
 	return &PaymentHandler{
 		fundWalletService: fundWalletService, 

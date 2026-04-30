@@ -5,20 +5,23 @@ import (
 
 	"gorm.io/gorm"
 )
-
-type UserStore struct {
+type UserStore interface {
+	Create(user *User) error
+	GetByID(id uint) (*User, error)
+}
+type userStore struct {
 	db *gorm.DB
 }
 
 func NewUserStore(db *gorm.DB) UserStore {
-	return UserStore{db: db}
+	return &userStore{db: db}
 }
 
-func (s *UserStore) Create(user *User) error {
+func (s *userStore) Create(user *User) error {
 	return s.db.Create(user).Error
 }
 
-func (s *UserStore) GetByID(id int) (*User, error) {
+func (s *userStore) GetByID(id uint) (*User, error) {
 
 	var user User
 	
@@ -28,6 +31,8 @@ func (s *UserStore) GetByID(id int) (*User, error) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
+
+		return nil, err
 	}
 
 	return &user, nil

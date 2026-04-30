@@ -2,15 +2,21 @@ package currency
 
 import "fmt"
 
-type CurrencyService struct {
+type CurrencyService interface {
+	Create(name, symbol, iconUrl string, baseUnitFactor int) (*Currency, error) 
+	GetAll() ([]Currency, error)
+	GetByID(id uint) (*Currency, error)
+	CalculateCurrencyAmountInBaseUnit(currencyId uint, amount float64) (int, error)
+}
+type currencyService struct {
 	store CurrencyStore
 }
 
 func NewCurrencyService(store CurrencyStore) CurrencyService {
-	return CurrencyService{store: store}
+	return &currencyService{store: store}
 }
 
-func (s *CurrencyService) Create(name, symbol, iconUrl string, baseUnitFactor int) (*Currency, error) {
+func (s *currencyService) Create(name, symbol, iconUrl string, baseUnitFactor int) (*Currency, error) {
 	currency := &Currency{
 		Name: name,
 		Symbol: symbol,
@@ -27,15 +33,15 @@ func (s *CurrencyService) Create(name, symbol, iconUrl string, baseUnitFactor in
 	return currency, nil
 }
 
-func (s *CurrencyService) GetAll() ([]Currency, error) {
+func (s *currencyService) GetAll() ([]Currency, error) {
 	return s.store.GetAll();
 }
 
-func (s *CurrencyService) GetByID(id uint) (*Currency, error) {
+func (s *currencyService) GetByID(id uint) (*Currency, error) {
 	return s.store.GetByID(id);
 }
 
-func (s *CurrencyService) CalculateCurrencyAmountInBaseUnit(currencyId uint, amount float64) (int, error) {
+func (s *currencyService) CalculateCurrencyAmountInBaseUnit(currencyId uint, amount float64) (int, error) {
 	currency, err := s.store.GetByID(currencyId)
 	
 	if err != nil {

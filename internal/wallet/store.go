@@ -5,24 +5,33 @@ import (
 
 	"gorm.io/gorm"
 )
+type WalletStore interface {
+	Create(wallet *Wallet) error
+	GetByID(id uint) (*Wallet, error)
+	GetByUserIdAndCurrencyId(userId uint, currencyId uint) (*Wallet, error)
+	FindByUserId(userId uint) ([]Wallet, error)
+	WithTransaction(fn func(tx *gorm.DB) error) error
+	Credit(walletId uint, amount uint) error
+	Debit(walletId uint, amount uint) error
+}
 
-type WalletStore struct {
-	DB *gorm.DB
+type walletStore struct {
+	db *gorm.DB
 }
 
 func NewWalletStore(db *gorm.DB) WalletStore {
-	return WalletStore{DB: db}
+	return &walletStore{db: db}
 }
 
-func (s *WalletStore) Create(wallet *Wallet) error {
-	return s.DB.Create(wallet).Error
+func (s *walletStore) Create(wallet *Wallet) error {
+	return s.db.Create(wallet).Error
 }
 
-func (s *WalletStore) GetByID(id uint) (*Wallet, error) {
+func (s *walletStore) GetByID(id uint) (*Wallet, error) {
 
 	var wallet Wallet
 	
-	err := s.DB.First(&wallet, id).Error
+	err := s.db.First(&wallet, id).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -35,11 +44,11 @@ func (s *WalletStore) GetByID(id uint) (*Wallet, error) {
 	return &wallet, nil
 }
 
-func (s *WalletStore) GetByUserIdAndCurrencyId(userId uint, currencyId uint) (*Wallet, error) {
+func (s *walletStore) GetByUserIdAndCurrencyId(userId uint, currencyId uint) (*Wallet, error) {
 
 	var wallet Wallet
 	
-	err := s.DB.Where(&Wallet{
+	err := s.db.Where(&Wallet{
 		UserId: userId,
 		CurrencyId: currencyId,
 	}).First(&wallet).Error
@@ -56,11 +65,11 @@ func (s *WalletStore) GetByUserIdAndCurrencyId(userId uint, currencyId uint) (*W
 }
 
 
-func (s *WalletStore) FindByUserId(userId uint) ([]Wallet, error) {
+func (s *walletStore) FindByUserId(userId uint) ([]Wallet, error) {
 
 	var wallets []Wallet
 
-	err := s.DB.Where(&Wallet{
+	err := s.db.Where(&Wallet{
 		UserId: userId,
 	}).Find(&wallets).Error
 
@@ -73,5 +82,28 @@ func (s *WalletStore) FindByUserId(userId uint) ([]Wallet, error) {
 	}
 
 	return wallets, nil
+}
+
+func (s *walletStore) WithTransaction(fn func(tx *gorm.DB) error) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return fn(tx)
+	})
+}
+
+func (s *walletStore) Debit(walletId uint, amount uint) error {
+	err := s.db.Model(&Wallet{}).Where("id = ? AND balance >= ?", walletId, amount).UpdateColumn("balance", gorm.Expr("balance - ?", amount)).Error
+	
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("insufficient balance or balance changed")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *walletStore) Credit(walletId uint, amount uint) error {
+	return s.db.Model(&Wallet{}).Where("id = ?", walletId).UpdateColumn("balance", gorm.Expr("balance + ?", amount)).Error
 }
 

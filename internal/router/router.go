@@ -16,7 +16,7 @@ import (
  * This file is responsible for registering all routes for the application.
  * It initializes the necessary services and handlers for each module and registers the routes with the Gin router.
  */
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, redisService *redis.RedisService) {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, redisService redis.RedisService) {
 
 	api := r.Group("/api/v1")
 
@@ -40,29 +40,29 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, redisService *redis.RedisService
 
 	// Wallet
 	walletStore := wallet.NewWalletStore(db)
-	walletService := wallet.NewWalletService(walletStore, &userStore, &currencyStore)
+	walletService := wallet.NewWalletService(walletStore, userStore, currencyStore)
 	walletHandler := wallet.NewWalletHandler(walletService)
 	wallet.RegisterWalletRoutes(api, walletHandler)
 
 	// Payment
 	fundWalletService := payment.NewFundWalletService(
-		&walletStore, 
-		&currencyStore,
-		&currencyService, 
-		&transactionStore,
+		walletStore, 
+		currencyStore,
+		currencyService, 
+		transactionStore,
 	)
 	internalTransferService := payment.NewInternalTransferService(
-		&walletStore, 
-		&currencyStore, 
-		&currencyService, 
-		&transactionStore, 
+		walletStore, 
+		currencyStore, 
+		currencyService, 
+		transactionStore, 
 		redisService,
 	)
 	externalBankTransferService := payment.NewExternalBankAccountTransferService(
-		&walletStore,
-		&currencyStore,
-		&currencyService,
-		&transactionStore,
+		walletStore,
+		currencyStore,
+		currencyService,
+		transactionStore,
 		redisService,
 		thirdparty.NewThirdPartyPaymentAPI(),
 	)

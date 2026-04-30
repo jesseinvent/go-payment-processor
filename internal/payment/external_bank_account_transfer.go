@@ -16,24 +16,34 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type ExternalBankAccountTransferService struct {
-	walletStore *wallet.WalletStore
-	currencyStore *currency.CurrencyStore
-	currencyService *currency.CurrencyService
-	transactionStore *transaction.TransactionStore
-	redisService *redis.RedisService
-	thirdPartyService *thirdparty.ThirdPartyPaymentAPI
+type ExternalBankAccountTransferService interface {
+	 ProcessExternalBankAccountTransfer(
+		userId uint, 
+		currencyId uint, 
+		amount float64,  
+		idempotencyKey string, 
+		beneficiaryDetails BeneficiaryDetails,
+	) (string, error) 
+}
+
+type externalBankAccountTransferService struct {
+	walletStore wallet.WalletStore
+	currencyStore currency.CurrencyStore
+	currencyService currency.CurrencyService
+	transactionStore transaction.TransactionStore
+	redisService redis.RedisService
+	thirdPartyService thirdparty.ThirdPartyPaymentAPI
 }
 
 func NewExternalBankAccountTransferService(
-		walletStore *wallet.WalletStore, 
-		currencyStore *currency.CurrencyStore, 
-		currencyService *currency.CurrencyService, 
-		transactionStore *transaction.TransactionStore, 
-		redisService *redis.RedisService,
-		thirdPartyService *thirdparty.ThirdPartyPaymentAPI,
-	) *ExternalBankAccountTransferService {
-	return &ExternalBankAccountTransferService{
+		walletStore wallet.WalletStore, 
+		currencyStore currency.CurrencyStore, 
+		currencyService currency.CurrencyService, 
+		transactionStore transaction.TransactionStore, 
+		redisService redis.RedisService,
+		thirdPartyService thirdparty.ThirdPartyPaymentAPI,
+	) ExternalBankAccountTransferService {
+	return &externalBankAccountTransferService{
 		walletStore: walletStore,
 		currencyStore: currencyStore,
 		currencyService: currencyService,
@@ -52,7 +62,13 @@ type BeneficiaryDetails struct {
 }
 
 // Simulates transfers between a wallet and an external bank account using transactions.
-func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(userId uint, currencyId uint, amount float64,  idempotencyKey string, beneficiaryDetails BeneficiaryDetails) (string, error) {
+func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
+		userId uint, 
+		currencyId uint, 
+		amount float64,  
+		idempotencyKey string, 
+		beneficiaryDetails BeneficiaryDetails,
+	) (string, error) {
 	 
 	ctx := context.Background()
 
@@ -80,7 +96,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	}
 
 	// Using a database transaction for atomicity and to prevent race conditions
-	err = s.walletStore.DB.Transaction(func(tx *gorm.DB) error {
+	err = s.walletStore.WithTransaction(func(tx *gorm.DB) error {
 		// Get sender's currency wallet and lock for update to prevent race conditions
 		senderCurrencyWallet := &wallet.Wallet{}
 
@@ -110,10 +126,10 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 		// Debit sender's wallet
 		senderCurrencyWallet.Balance -= uint(amountInMinorUnit)
 
-		err = tx.Save(senderCurrencyWallet).Error
+		err = s.walletStore.Debit(senderCurrencyWallet.ID, uint(amountInMinorUnit))
 
 		if err != nil {
-			return fmt.Errorf("could not update wallet balance - %w", err)
+			return fmt.Errorf("error debiting wallet - %w", err)
 		}
 
 		// Create debit transaction record with pending status
@@ -129,7 +145,7 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 			Status:                  transaction.Pending,
 		}
 
-		err = tx.Save(debitTransaction).Error
+		err = tx.Create(debitTransaction).Error
 
 		if err != nil {
 			return fmt.Errorf("could not create transaction record - %w", err)
@@ -182,18 +198,20 @@ func (s *ExternalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	beneficiaryDetailsJsonStr := string(beneficiaryDetailsJson)
 
 	// Update transaction record with transfer reference and status based on response from third party API
-	err = s.transactionStore.DB.Model(&transaction.Transaction{}).Where("reference = ?", ref).Updates(map[string]interface{}{
-		"transaction_beneficiary_details": beneficiaryDetailsJsonStr,
-		"status": transaction.Completed,
-		"metadata": string(thirdPartyResponseJson), // Store third party response for audit and reconciliation purposes
-	}).Error
+	_, err = s.transactionStore.UpdateByReference(ref, 
+		&transaction.Transaction{
+			TransactionBeneficiaryDetails: beneficiaryDetailsJsonStr,
+			Status: transaction.Completed,
+			Metadata: string(thirdPartyResponseJson), // Store third party response for audit and reconciliation purposes
+		},
+	)
 
 	if err != nil {
 		return "", fmt.Errorf("error updating transaction record - %w", err)
 	}
 
 	// Store transfer reference in redis with idempotency key to prevent duplicate processing
-	_, err = s.redisService.Set(ctx, idempotencyKey, ref, time.Hour * 24)
+	err = s.redisService.Set(ctx, idempotencyKey, ref, time.Hour * 24)
 
 	if err != nil {
 		return "", fmt.Errorf("error storing transfer reference in Redis - %w", err)

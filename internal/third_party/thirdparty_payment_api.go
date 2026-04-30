@@ -5,10 +5,14 @@ import (
 	"time"
 )
 
-type ThirdPartyPaymentAPI struct {}
+type ThirdPartyPaymentAPI interface {
+	SimulateBankTransfer(request SimulateBankTransferRequest) (SimulateBankTransferResponse, error) 
+}
 
-func NewThirdPartyPaymentAPI() *ThirdPartyPaymentAPI {
-	return &ThirdPartyPaymentAPI{}
+type thirdPartyPaymentAPI struct {}
+
+func NewThirdPartyPaymentAPI() ThirdPartyPaymentAPI {
+	return &thirdPartyPaymentAPI{}
 }
 
 type SimulateBankTransferRequest struct {
@@ -28,7 +32,7 @@ type SimulateBankTransferResponse struct {
 	Status string
 }
 
-func (s *ThirdPartyPaymentAPI) SimulateBankTransfer(request SimulateBankTransferRequest) (SimulateBankTransferResponse, error) {
+func (s *thirdPartyPaymentAPI) SimulateBankTransfer(request SimulateBankTransferRequest) (SimulateBankTransferResponse, error) {
 
 	// Simulates http call to third party payment API to initiate bank transfer
 	time.Sleep(3 * time.Second)

@@ -67,7 +67,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userService.GetByID(id)
+	user, err := h.userService.GetByID(uint(id))
 
 	if err != nil {
 		log.Print(err.Error())

@@ -8,12 +8,16 @@ import (
 
 	"github.com/go-redis/redis/v8"
 )
-
-type RedisService struct {
+type RedisService interface {
+	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+	Get(ctx context.Context, key string) (string, error)
+	Delete(ctx context.Context, key string) error 
+}
+type redisService struct {
 	redisClient *redis.Client
 }
 
-func NewRedisService(redisUrl string) (*RedisService, error) {
+func NewRedisService(redisUrl string) (RedisService, error) {
 
 	redisClient, err := ConnectToRedisWithRetry(redisUrl, 5, 2*time.Second)
 
@@ -21,7 +25,7 @@ func NewRedisService(redisUrl string) (*RedisService, error) {
 		return nil, err
 	}
 
-	return &RedisService{redisClient: redisClient}, nil
+	return &redisService{redisClient: redisClient}, nil
 }
 
 func ConnectToRedisWithRetry(redisUrl string, maxRetries int, retryInterval time.Duration) (*redis.Client, error) {
@@ -46,18 +50,18 @@ func ConnectToRedisWithRetry(redisUrl string, maxRetries int, retryInterval time
 	return nil, fmt.Errorf("could not connect to Redis after %d attempts: %w", maxRetries, err)
 }
 
-func (r *RedisService) Set(ctx context.Context, key string, value string, ttl time.Duration) (bool, error) {
+func (r *redisService) Set(ctx context.Context, key string, value string, ttl time.Duration) error {
 
 	err := r.redisClient.Set(ctx, key, value, ttl).Err();
 
 	if err != nil {
-		return false, fmt.Errorf("error setting value in redis - %w", err)
+		return fmt.Errorf("error setting value in redis - %w", err)
 	}
 
-	return true, nil;
+	return nil;
 }
 
-func (r *RedisService) Get(ctx context.Context, key string) (string, error) {
+func (r *redisService) Get(ctx context.Context, key string) (string, error) {
 
 	value, err := r.redisClient.Get(ctx, key).Result();
 
@@ -71,13 +75,13 @@ func (r *RedisService) Get(ctx context.Context, key string) (string, error) {
 	return value, nil
  }
 
-func (r *RedisService) Delete(ctx context.Context, key string) (bool, error) {
+func (r *redisService) Delete(ctx context.Context, key string) (error) {
 
 	err := r.redisClient.Del(ctx, key).Err();
 
 	if err != nil {
-		return false, fmt.Errorf("error deleting value from redis - %w", err)
+		return fmt.Errorf("error deleting value from redis - %w", err)
 	}
 
-	return true, nil
+	return nil
 }

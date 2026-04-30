@@ -6,21 +6,31 @@ import (
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
 	"github.com/jesseinvent/go-payment-processor/internal/user"
 )
-type WalletService struct {
+
+type WalletService interface {
+	CreateWallet(currencyId, userId uint) (*Wallet, error)
+	GetByID(id uint) (*Wallet, error)
+	GetUserWallets(userId uint) ([]Wallet, error)
+}
+type walletService struct {
 	walletStore WalletStore
-	userStore *user.UserStore
-	currencyStore *currency.CurrencyStore
+	userStore user.UserStore
+	currencyStore currency.CurrencyStore
 }
 
-func NewWalletService(store WalletStore, userStore *user.UserStore, currencyStore *currency.CurrencyStore) WalletService {
-	return WalletService{
+func NewWalletService(
+		store WalletStore, 
+		userStore user.UserStore, 
+		currencyStore currency.CurrencyStore,
+	) WalletService {
+	return &walletService{
 		walletStore: store,
 		userStore: userStore,
 		currencyStore: currencyStore,
 	}
 }
 
-func (s *WalletService) CreateWallet(currencyId, userId uint) (*Wallet, error) {
+func (s *walletService) CreateWallet(currencyId, userId uint) (*Wallet, error) {
 
 	// Validate currency exists
 	currency, err := s.currencyStore.GetByID(currencyId);
@@ -54,10 +64,10 @@ func (s *WalletService) CreateWallet(currencyId, userId uint) (*Wallet, error) {
 	return wallet, nil
 }
 
-func (s *WalletService) GetByID(id uint) (*Wallet, error) {
+func (s *walletService) GetByID(id uint) (*Wallet, error) {
 	return s.walletStore.GetByID(id)
 }
 
-func (s *WalletService) GetUserWallets(userId uint) ([]Wallet, error) {
+func (s *walletService) GetUserWallets(userId uint) ([]Wallet, error) {
 	return s.walletStore.FindByUserId(userId)
 }
