@@ -40,7 +40,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, redisService redis.RedisService)
 
 	// Wallet
 	walletStore := wallet.NewWalletStore(db)
-	walletService := wallet.NewWalletService(walletStore, userStore, currencyStore)
+	walletService := wallet.NewWalletService(walletStore, currencyStore)
 	walletHandler := wallet.NewWalletHandler(walletService)
 	wallet.RegisterWalletRoutes(api, walletHandler)
 

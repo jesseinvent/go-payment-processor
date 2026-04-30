@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
-	"github.com/jesseinvent/go-payment-processor/internal/user"
 )
 
 type WalletService interface {
@@ -14,18 +13,15 @@ type WalletService interface {
 }
 type walletService struct {
 	walletStore WalletStore
-	userStore user.UserStore
 	currencyStore currency.CurrencyStore
 }
 
 func NewWalletService(
 		store WalletStore, 
-		userStore user.UserStore, 
 		currencyStore currency.CurrencyStore,
 	) WalletService {
 	return &walletService{
 		walletStore: store,
-		userStore: userStore,
 		currencyStore: currencyStore,
 	}
 }

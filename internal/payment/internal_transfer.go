@@ -127,7 +127,7 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 		senderCurrencyWalletBalance := senderCurrencyWallet.Balance - uint(amountInMinorUnit)
 
 		// Debit sender wallet
-		err = s.walletStore.Debit(senderCurrencyWallet.ID, uint(amountInMinorUnit))
+		err = s.walletStore.Debit(tx, senderCurrencyWallet.ID, uint(amountInMinorUnit))
 
 		if err != nil {
 			return fmt.Errorf("error debiting sender wallet - %w", err)
@@ -155,7 +155,7 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 		receiverCurrencyWalletBalance := receiverCurrencyWallet.Balance + uint(amountInMinorUnit)
 		
 		// Credit receiver wallet
-		err = s.walletStore.Credit(receiverCurrencyWallet.ID, uint(amountInMinorUnit))
+		err = s.walletStore.Credit(tx, receiverCurrencyWallet.ID, uint(amountInMinorUnit))
 
 		if err != nil {
 			return fmt.Errorf("error crediting receiver wallet - %w", err)

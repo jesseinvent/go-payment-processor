@@ -11,8 +11,8 @@ type WalletStore interface {
 	GetByUserIdAndCurrencyId(userId uint, currencyId uint) (*Wallet, error)
 	FindByUserId(userId uint) ([]Wallet, error)
 	WithTransaction(fn func(tx *gorm.DB) error) error
-	Credit(walletId uint, amount uint) error
-	Debit(walletId uint, amount uint) error
+	Credit(tx *gorm.DB, walletId uint, amount uint) error
+	Debit(tx *gorm.DB, walletId uint, amount uint) error
 }
 
 type walletStore struct {
@@ -90,8 +90,14 @@ func (s *walletStore) WithTransaction(fn func(tx *gorm.DB) error) error {
 	})
 }
 
-func (s *walletStore) Debit(walletId uint, amount uint) error {
-	err := s.db.Model(&Wallet{}).Where("id = ? AND balance >= ?", walletId, amount).UpdateColumn("balance", gorm.Expr("balance - ?", amount)).Error
+func (s *walletStore) Debit(tx *gorm.DB, walletId uint, amount uint) error {
+
+	// If tx is nil, use s.db for the operation
+	if tx == nil {
+		tx = s.db
+	}
+
+	err := tx.Model(&Wallet{}).Where("id = ? AND balance >= ?", walletId, amount).UpdateColumn("balance", gorm.Expr("balance - ?", amount)).Error
 	
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -103,7 +109,12 @@ func (s *walletStore) Debit(walletId uint, amount uint) error {
 	return nil
 }
 
-func (s *walletStore) Credit(walletId uint, amount uint) error {
-	return s.db.Model(&Wallet{}).Where("id = ?", walletId).UpdateColumn("balance", gorm.Expr("balance + ?", amount)).Error
+func (s *walletStore) Credit(tx *gorm.DB, walletId uint, amount uint) error {
+	// If tx is nil, use s.db for the operation
+	if tx == nil {
+		tx = s.db
+	}
+
+	return tx.Model(&Wallet{}).Where("id = ?", walletId).UpdateColumn("balance", gorm.Expr("balance + ?", amount)).Error
 }
 

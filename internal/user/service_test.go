@@ -9,7 +9,7 @@ import (
 )
 
 func TestUserService_Create_Success(t *testing.T) {
-	mockUserStore := &MockUserStore{
+	mockUserStore := &mockUserStore{
 		CreateFunc: func(user *User) error {
 			return nil
 		},
@@ -26,7 +26,7 @@ func TestUserService_Create_Success(t *testing.T) {
 }
 
 func TestUserService_Create_Error(t *testing.T) {
-	mockUserStore := &MockUserStore{
+	mockUserStore := &mockUserStore{
 		CreateFunc: func(user *User) error {
 			return errors.New("db error")
 		},
@@ -48,7 +48,7 @@ func TestUserService_GetByID_Success(t *testing.T) {
 		PhoneNumber: "09023487632",
 	}
 
-	mockUserStore := &MockUserStore{
+	mockUserStore := &mockUserStore{
 		GetByIDFunc: func(id uint) (*User, error) {
 			return createdUser, nil
 		},
@@ -66,7 +66,7 @@ func TestUserService_GetByID_Success(t *testing.T) {
 }
 
 func TestUserService_GetByID_Error(t *testing.T) {
-		mockUserStore := &MockUserStore{
+		mockUserStore := &mockUserStore{
 		GetByIDFunc: func(id uint) (*User, error) {
 			return nil, gorm.ErrRecordNotFound
 		},

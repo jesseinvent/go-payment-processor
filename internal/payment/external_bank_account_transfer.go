@@ -126,7 +126,7 @@ func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 		// Debit sender's wallet
 		senderCurrencyWallet.Balance -= uint(amountInMinorUnit)
 
-		err = s.walletStore.Debit(senderCurrencyWallet.ID, uint(amountInMinorUnit))
+		err = s.walletStore.Debit(tx, senderCurrencyWallet.ID, uint(amountInMinorUnit))
 
 		if err != nil {
 			return fmt.Errorf("error debiting wallet - %w", err)

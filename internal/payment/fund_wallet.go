@@ -52,14 +52,12 @@ func (s *fundWalletService) FundUserWallet(userId, walletId uint, amount float64
 		// Lock wallet record for update to prevent race conditions
 		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", walletId).First(&wallet).Error
 
-		if err != nil {
-			tx.Rollback()
+		if err != nil {		
 			return fmt.Errorf("error getting wallet - %w", err)
 		}
 
 		// Validate wallet belongs to user
 		if wallet.UserId != userId {
-			tx.Rollback()
 			return fmt.Errorf("unauthorized to fund this wallet")
 		}
 
@@ -70,15 +68,13 @@ func (s *fundWalletService) FundUserWallet(userId, walletId uint, amount float64
 		log.Print("AMOUNT IN MINOR", amountInMinorUnit)
 
 		if err != nil {
-			tx.Rollback()
 			return fmt.Errorf("error calculating amount in minor unit - %w", err)
 		}
 
 		// Credit wallet
-		err = tx.Model(&wallet).Update("balance", wallet.Balance + uint(amountInMinorUnit)).Error
-
+		err = s.walletStore.Credit(tx, wallet.ID, uint(amountInMinorUnit))
+		
 		if err != nil {
-			tx.Rollback()
 			return fmt.Errorf("error updating wallet balance - %w", err)
 		}
 
@@ -101,16 +97,8 @@ func (s *fundWalletService) FundUserWallet(userId, walletId uint, amount float64
 		err = tx.Create(transaction).Error
 
 		if err != nil {
-			tx.Rollback()
 			return fmt.Errorf("error creating transaction record - %w", err)
 		}	
-
-		err = tx.Commit().Error
-
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error committing transaction - %w", err)
-		}
 
 		return nil
 	})
@@ -118,8 +106,6 @@ func (s *fundWalletService) FundUserWallet(userId, walletId uint, amount float64
 	if err != nil {
 		return nil, err
 	}
-
-	
 
 	return wallet, nil
 }
