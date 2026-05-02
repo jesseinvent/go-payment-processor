@@ -10,6 +10,7 @@ import (
 )
 type RedisService interface {
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+	SetNX(ctx context.Context, key string, value string, ttl time.Duration) (bool, error)
 	Get(ctx context.Context, key string) (string, error)
 	Delete(ctx context.Context, key string) error 
 }
@@ -59,6 +60,17 @@ func (r *redisService) Set(ctx context.Context, key string, value string, ttl ti
 	}
 
 	return nil;
+}
+
+func (r *redisService) SetNX(ctx context.Context, key string, value string, ttl time.Duration) (bool, error) {
+
+	set, err := r.redisClient.SetNX(ctx, key, value, ttl).Result();
+
+	if err != nil {
+		return false, fmt.Errorf("error setting nx value in redis - %w", err)
+	}
+
+	return set, nil;
 }
 
 func (r *redisService) Get(ctx context.Context, key string) (string, error) {

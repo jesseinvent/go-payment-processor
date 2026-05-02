@@ -62,18 +62,29 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 
 	ctx := context.Background()
 
-	existingRef, err := s.redisService.Get(ctx, idempotencyKey)
+	// CheckS if request has already been processed for the given key. If not, set the key with the transfer reference to prevent duplicate processing.
 
-	// Check redis for existing transfer with same idempotency key to prevent duplicate processing
-	 // If key exists, return existing reference without processing transfer again
-	if err != nil {
-		return "", fmt.Errorf("error checking idempotency key - %w", err)
+	// if KeySet = true; Key was not found in redis and was created, safe for processing.
+	// if KeySet = false; Key already exists in redis and was not created, return existing reference without processing transfer again.
+	
+	keySet, err := s.redisService.SetNX(ctx, idempotencyKey, "pending", 5*time.Minute)
+
+	if !keySet {
+		// Key already exists, return existing reference without processing transfer again
+		existingRefValue, err := s.redisService.Get(ctx, idempotencyKey)
+
+		if err != nil {
+			return "", fmt.Errorf("error retrieving existing transfer reference from Redis - %w", err)
+		}
+
+		if existingRefValue == "pending" {
+			return "Transfer is still pending", nil 
+		}
+
+		return existingRefValue, nil
 	}
 
-	// If key exists, return existing reference without processing transfer again
-	if existingRef != "" {
-		return existingRef, nil
-	}
+	// Key did not exist and was set successfully, safe to process transfer
 
 	// Using a database transaction for atomicity and to prevent race conditions
 	err = s.walletStore.WithTransaction(func(tx *gorm.DB) error {

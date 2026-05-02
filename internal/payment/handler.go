@@ -2,6 +2,7 @@ package payment
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +36,7 @@ func (h *PaymentHandler) FundWallet(c *gin.Context) {
 	err := c.ShouldBindJSON(&fundWalletDto)
 
 	if err != nil {
+		log.Printf("Error binding JSON: %v", err)
 		c.JSON(400, response.Error(fmt.Sprintf("Invalid request format - %s", err.Error())))
 		return
 	}
@@ -42,6 +44,7 @@ func (h *PaymentHandler) FundWallet(c *gin.Context) {
 	userWallet, err := h.fundWalletService.FundUserWallet(fundWalletDto.WalletId, fundWalletDto.UserId, fundWalletDto.Amount)
 	
 	if err != nil {
+		log.Printf("Error funding wallet: %v", err)
 		c.JSON(http.StatusBadRequest, response.Error(fmt.Sprintf("Error funding wallet - %s", err.Error())))
 		return
 	}
@@ -137,6 +140,7 @@ func (h *PaymentHandler) ExternalBankAccountTransfer(c *gin.Context) {
 	)
 
 	if err != nil {
+		log.Printf("Error processing external bank transfer: %v", err)
 		c.JSON(
 			http.StatusBadRequest,
 			response.Error(fmt.Sprintf("Error processing external bank transfer - %s", err.Error())),

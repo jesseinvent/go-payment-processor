@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
@@ -72,15 +73,31 @@ func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	 
 	ctx := context.Background()
 
-	existingRef, err := s.redisService.Get(ctx, idempotencyKey)
+	keySet, err := s.redisService.SetNX(ctx, idempotencyKey, "pending", time.Minute * 5)
 
 	if err != nil {
 		return "", fmt.Errorf("error checking idempotency key - %w", err)
 	}
 
-	if existingRef != "" {
-		return existingRef, nil
+	if !keySet {
+		// Key already exists, return existing reference without processing transfer again
+		existingRefValue, err := s.redisService.Get(ctx, idempotencyKey)
+
+		if err != nil {
+			return "", fmt.Errorf("error retrieving existing transfer reference from Redis - %w", err)
+		}
+
+		if existingRefValue == "pending" {
+			log.Printf("Transfer is still pending for idempotency key %s", idempotencyKey)
+			return "Transfer is still pending", nil 
+		}
+
+		log.Printf("Transfer already processed for idempotency key %s, returning existing reference", idempotencyKey)
+
+		return existingRefValue, nil
 	}
+
+	// Idempotency key did not exist and was set successfully, safe to process transfer
  
 	// Generate unique reference for transfer
 	ref := utils.HashString(fmt.Sprintf("bank-transfer-%d-%d-%d", userId, currencyId, time.Now().Unix()))
