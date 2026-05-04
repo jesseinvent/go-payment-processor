@@ -1,6 +1,6 @@
 # Go Payment Processor
 
-Simulates a secure implementation of internal wallets transfers and external payments operations, using atomic database transactions and idempotency keys to prevent race conditions, and handle to concurrent requests properly.
+Simulates a secure implementation of internal wallets transfers and external payments operations in a Fintech system. It demonstrates the use atomic database transactions and idempotency keys to prevent race conditions, double processing, and handling concurrent requests properly.
 
 - **Wallet Funding**: Simulates funding wallet from an external source e.g virtual account credit
 - **Internal Wallet Transfer:** Simulates transfer between wallets, accounts for race conditions and idempotency.
