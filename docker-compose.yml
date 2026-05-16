@@ -3,14 +3,8 @@ services:
     build: .
     ports:
       - "5001:5001"
-    environment:
-      - DB_HOST=postgres-db
-      - DB_PORT=5432
-      - DB_NAME=postgres 
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_URL=postgres://user:password@postgres-db:5432/postgres?sslmode=disable
-      - REDIS_URL=redis:6379
+    env_file:
+      - .env
     
     depends_on:
       postgres-db:

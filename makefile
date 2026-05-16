@@ -43,7 +43,7 @@ docker-down:
 logs:
 	docker compose logs -f
 
-DB_URL=postgres://user:password@localhost:5432/postgres?sslmode=disable
+DB_URL=postgres://user:password@localhost:5432/payment_db?sslmode=disable
 
 migrate-up:
 	migrate -path ./migrations -database "$(DB_URL)" up
