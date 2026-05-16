@@ -70,7 +70,7 @@ curl -X GET http://localhost:5001/api/v1/wallets/user/1
 
 ### Fund wallet - Simulates funding a user's wallet from an external source
 ```bash
-curl -X POST http://localhost:5001/api/v1/wallets/fund-wallet \
+curl -X POST http://localhost:5001/api/v1/payments/fund-wallet \
 -H "Content-Type: application/json" \
 -d '{
   "userId": 1,
@@ -81,7 +81,7 @@ curl -X POST http://localhost:5001/api/v1/wallets/fund-wallet \
 
 ### Internal wallet transfer - Simulates transferring payments in a specific currency between two wallets within the system
 ```bash
-curl -X POST http://localhost:5001/api/v1/wallets/internal-transfer \
+curl -X POST http://localhost:5001/api/v1/payments/internal-transfer \
 -H "Content-Type: application/json" \
 -H "Idempotency-Key: <unique-uuid-key>" \
 -d '{
@@ -94,7 +94,7 @@ curl -X POST http://localhost:5001/api/v1/wallets/internal-transfer \
 
 ### External bank transfer - Simulates transferring payments in a specific currency from a user's wallet to an external bank account
 ```bash
-curl -X POST http://localhost:5001/api/v1/wallets/external-transfer \
+curl -X POST http://localhost:5001/api/v1/payments/external-bank-transfer \
 -H "Content-Type: application/json" \
 -H "Idempotency-Key: <unique-uuid-key>" \
 -d '{

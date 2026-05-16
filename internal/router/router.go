@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
+	ledgerEntry "github.com/jesseinvent/go-payment-processor/internal/ledger_entry"
 	"github.com/jesseinvent/go-payment-processor/internal/payment"
 	"github.com/jesseinvent/go-payment-processor/internal/pkg/redis"
 	thirdparty "github.com/jesseinvent/go-payment-processor/internal/third_party"
@@ -44,13 +45,18 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, redisService redis.RedisService)
 	walletHandler := wallet.NewWalletHandler(walletService)
 	wallet.RegisterWalletRoutes(api, walletHandler)
 
+	// Ledger Entry
+	ledgerEntryStore := ledgerEntry.NewLedgerEntryStore(db)
+
 	// Payment
 	fundWalletService := payment.NewFundWalletService(
 		walletStore, 
 		currencyStore,
 		currencyService, 
 		transactionStore,
+		ledgerEntryStore,
 	)
+
 	internalTransferService := payment.NewInternalTransferService(
 		walletStore, 
 		currencyStore, 
@@ -58,11 +64,13 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, redisService redis.RedisService)
 		transactionStore, 
 		redisService,
 	)
+	
 	externalBankTransferService := payment.NewExternalBankAccountTransferService(
 		walletStore,
 		currencyStore,
 		currencyService,
 		transactionStore,
+		ledgerEntryStore,
 		redisService,
 		thirdparty.NewThirdPartyPaymentAPI(),
 	)

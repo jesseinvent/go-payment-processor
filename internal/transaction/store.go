@@ -3,7 +3,6 @@ package transaction
 import (
 	"gorm.io/gorm"
 )
-
 type TransactionStore interface {
 	Create(transaction *Transaction) error
 	FindByWalletId(walletId uint) ([]Transaction, error)
@@ -11,22 +10,22 @@ type TransactionStore interface {
 	UpdateByReference(reference string, transaction *Transaction) (*Transaction, error)
 }
 type transactionStore struct {
-	DB *gorm.DB
+	db *gorm.DB
 }
 
 func NewTransactionStore(db *gorm.DB) TransactionStore {
-	return &transactionStore{DB: db}
+	return &transactionStore{db: db}
 }
 
 func (s *transactionStore) Create(transaction *Transaction) error {
-	return s.DB.Create(transaction).Error
+	return s.db.Create(transaction).Error
 }
 
 func (s *transactionStore) FindByWalletId(walletId uint) ([]Transaction, error) {
 
 	var transactions []Transaction
 	
-	err := s.DB.Where(&Transaction{
+	err := s.db.Where(&Transaction{
 		WalletId: walletId,
 	}).Find(&transactions).Error
 
@@ -41,7 +40,7 @@ func (s *transactionStore) FindByUserId(userId uint) ([]Transaction, error) {
 
 	var transactions []Transaction
 	
-	err := s.DB.Where(&Transaction{
+	err := s.db.Where(&Transaction{
 		UserId: userId,
 	}).Find(&transactions).Error
 
@@ -56,7 +55,7 @@ func (s *transactionStore) UpdateByReference(reference string, fields *Transacti
 
 	var transaction Transaction
 
-	err := s.DB.Model(&Transaction{}).Where(&Transaction{Reference: reference}).Updates(fields).First(&transaction).Error
+	err := s.db.Model(&Transaction{}).Where(&Transaction{Reference: reference}).Updates(fields).First(&transaction).Error
 
 	if err != nil {
 		return nil, err

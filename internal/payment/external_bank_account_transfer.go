@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
+	ledgerEntry "github.com/jesseinvent/go-payment-processor/internal/ledger_entry"
 	"github.com/jesseinvent/go-payment-processor/internal/pkg/redis"
 	"github.com/jesseinvent/go-payment-processor/internal/pkg/utils"
 	thirdparty "github.com/jesseinvent/go-payment-processor/internal/third_party"
@@ -19,36 +20,39 @@ import (
 
 type ExternalBankAccountTransferService interface {
 	 ProcessExternalBankAccountTransfer(
-		userId uint, 
-		currencyId uint, 
-		amount float64,  
-		idempotencyKey string, 
-		beneficiaryDetails BeneficiaryDetails,
+		userId 				uint, 
+		currencyId 			uint, 
+		amount 				float64,  
+		idempotencyKey 		string, 
+		beneficiaryDetails 	BeneficiaryDetails,
 	) (string, error) 
 }
 
 type externalBankAccountTransferService struct {
-	walletStore wallet.WalletStore
-	currencyStore currency.CurrencyStore
-	currencyService currency.CurrencyService
-	transactionStore transaction.TransactionStore
-	redisService redis.RedisService
-	thirdPartyService thirdparty.ThirdPartyPaymentAPI
+	walletStore 		wallet.WalletStore
+	currencyStore 		currency.CurrencyStore
+	currencyService 	currency.CurrencyService
+	transactionStore 	transaction.TransactionStore
+	ledgerEntryStore	ledgerEntry.LedgerEntryStore
+	redisService 		redis.RedisService
+	thirdPartyService 	thirdparty.ThirdPartyPaymentAPI
 }
 
 func NewExternalBankAccountTransferService(
-		walletStore wallet.WalletStore, 
-		currencyStore currency.CurrencyStore, 
-		currencyService currency.CurrencyService, 
-		transactionStore transaction.TransactionStore, 
-		redisService redis.RedisService,
-		thirdPartyService thirdparty.ThirdPartyPaymentAPI,
+		walletStore 		wallet.WalletStore, 
+		currencyStore 		currency.CurrencyStore, 
+		currencyService 	currency.CurrencyService, 
+		transactionStore 	transaction.TransactionStore, 
+		ledgerEntryStore	ledgerEntry.LedgerEntryStore,
+		redisService 		redis.RedisService,
+		thirdPartyService 	thirdparty.ThirdPartyPaymentAPI,
 	) ExternalBankAccountTransferService {
 	return &externalBankAccountTransferService{
 		walletStore: walletStore,
 		currencyStore: currencyStore,
 		currencyService: currencyService,
 		transactionStore: transactionStore,
+		ledgerEntryStore: ledgerEntryStore,
 		redisService: redisService,
 		thirdPartyService: thirdPartyService,
 	}
@@ -138,7 +142,7 @@ func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 			return fmt.Errorf("insufficient wallet balance")
 		}
 
-		prevWalletBalance := senderCurrencyWallet.Balance
+		// prevWalletBalance := senderCurrencyWallet.Balance
 
 		// Debit sender's wallet
 		senderCurrencyWallet.Balance -= uint(amountInMinorUnit)
@@ -154,11 +158,11 @@ func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 			UserId:                  userId,
 			WalletId:                senderCurrencyWallet.ID,
 			CurrencyId:              senderCurrencyWallet.CurrencyId,
-			PreviousWalletBalance:   int(prevWalletBalance),
+			// PreviousWalletBalance:   int(prevWalletBalance),
 			Amount:                  int(amountInMinorUnit),
-			CurrentWalletBalance:    int(senderCurrencyWallet.Balance),
+			// CurrentWalletBalance:    int(senderCurrencyWallet.Balance),
 			Reference:               ref,
-			TransactionType:         transaction.Debit,
+			TransactionType:         transaction.Sent,
 			Status:                  transaction.Pending,
 		}
 
@@ -215,7 +219,7 @@ func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	beneficiaryDetailsJsonStr := string(beneficiaryDetailsJson)
 
 	// Update transaction record with transfer reference and status based on response from third party API
-	_, err = s.transactionStore.UpdateByReference(ref, 
+	tx, err := s.transactionStore.UpdateByReference(ref, 
 		&transaction.Transaction{
 			TransactionBeneficiaryDetails: beneficiaryDetailsJsonStr,
 			Status: transaction.Completed,
@@ -226,6 +230,26 @@ func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 	if err != nil {
 		return "", fmt.Errorf("error updating transaction record - %w", err)
 	}
+
+	wallet, err := s.walletStore.GetByID(tx.WalletId)
+
+	ledgerEntry := &ledgerEntry.LedgerEntry{
+		UserId: userId,
+		TransactionId: tx.ID,
+		WalletId: tx.WalletId,
+		CurrencyId: tx.CurrencyId,
+		EntryType: ledgerEntry.Debit,
+		BalanceBefore: int(wallet.Balance) - tx.Amount,
+		Amount: tx.Amount,	
+		BalanceAfter: int(wallet.Balance),
+	}
+
+	err = s.ledgerEntryStore.Create(ledgerEntry)
+
+	if err != nil {
+		return "", fmt.Errorf("error creating debit ledger record - %w", err)
+	}
+
 
 	// Store transfer reference in redis with idempotency key to prevent duplicate processing
 	err = s.redisService.Set(ctx, idempotencyKey, ref, time.Hour * 24)

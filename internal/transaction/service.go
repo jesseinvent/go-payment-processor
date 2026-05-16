@@ -41,7 +41,7 @@ func (s *transactionService) Create(
 	err := s.transactionStore.Create(transaction)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create transaction: %w", err)
+		return nil, fmt.Errorf("failed to create transaction: %v", err)
 	}
 
 	return transaction, nil

@@ -5,9 +5,6 @@ CREATE TABLE IF NOT EXISTS transactions (
     wallet_id INTEGER NOT NULL,
     currency_id INTEGER NOT NULL,
 
-    previous_wallet_balance INTEGER NOT NULL,
-    current_wallet_balance INTEGER NOT NULL,
-
     reference TEXT NOT NULL,
     amount INTEGER NOT NULL,
 

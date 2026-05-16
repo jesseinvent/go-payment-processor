@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
+	ledgerEntry "github.com/jesseinvent/go-payment-processor/internal/ledger_entry"
 	"github.com/jesseinvent/go-payment-processor/internal/transaction"
 	"github.com/jesseinvent/go-payment-processor/internal/wallet"
 	"gorm.io/gorm"
@@ -16,23 +17,26 @@ type FundWalletService interface {
 	FundUserWallet(userId, walletId uint, amount float64) (*wallet.Wallet, error)
 }
 type fundWalletService struct {
-	walletStore wallet.WalletStore
-	currencyStore currency.CurrencyStore
-	currencyService currency.CurrencyService
-	transactionStore transaction.TransactionStore
+	walletStore 		wallet.WalletStore
+	currencyStore 		currency.CurrencyStore
+	currencyService 	currency.CurrencyService
+	transactionStore 	transaction.TransactionStore
+	ledgerEntryStore 	ledgerEntry.LedgerEntryStore 
 }
 
 func NewFundWalletService(
-		walletStore wallet.WalletStore, 
-		currencyStore currency.CurrencyStore, 
-		currencyService currency.CurrencyService, 
-		transactionStore transaction.TransactionStore,
+		walletStore 		wallet.WalletStore, 
+		currencyStore 		currency.CurrencyStore, 
+		currencyService 	currency.CurrencyService, 
+		transactionStore 	transaction.TransactionStore,
+		ledgerEntryStore 	ledgerEntry.LedgerEntryStore, 
 	) FundWalletService {
 	return &fundWalletService{
-		walletStore: walletStore,
-		currencyStore: currencyStore,
-		currencyService: currencyService,
-		transactionStore: transactionStore,
+		walletStore: 		walletStore,
+		currencyStore: 		currencyStore,
+		currencyService: 	currencyService,
+		transactionStore: 	transactionStore,
+		ledgerEntryStore: 	ledgerEntryStore,
 	}
 }
 
@@ -80,24 +84,41 @@ func (s *fundWalletService) FundUserWallet(userId, walletId uint, amount float64
 
 		ref := fmt.Sprintf("fund-%d-%d", walletId, time.Now().Unix())
 
-
 		// Create transaction record
 		transaction := &transaction.Transaction{
 			UserId:                  userId,
 			WalletId:                walletId,
 			CurrencyId:              wallet.CurrencyId,
-			PreviousWalletBalance:   int(prevBalance),
 			Amount:                  int(amountInMinorUnit),
-			CurrentWalletBalance:    int(prevBalance + uint(amountInMinorUnit)),
 			Reference:               ref,
-			TransactionType:         transaction.Credit,
+			TransactionType:         transaction.Received,
 			Status:                  transaction.Completed,
 		}
 
 		err = tx.Create(transaction).Error
 
 		if err != nil {
-			return fmt.Errorf("error creating transaction record - %w", err)
+			return fmt.Errorf("error creating transaction record - %v", err)
+		}	
+
+		// Create ledger entry
+		ledgerEntry := &ledgerEntry.LedgerEntry{
+			UserId: userId,
+			TransactionId: transaction.ID,
+			WalletId: wallet.ID,
+			CurrencyId: wallet.CurrencyId,
+			EntryType: ledgerEntry.Credit,
+			BalanceBefore: int(prevBalance),
+			Amount: amountInMinorUnit,	
+			BalanceAfter: int(prevBalance + uint(amountInMinorUnit)),
+		}
+
+		err = tx.Create(ledgerEntry).Error
+
+		log.Print(ledgerEntry)
+
+		if err != nil {
+			return fmt.Errorf("error creating ledger entry record - %v", err)
 		}	
 
 		return nil

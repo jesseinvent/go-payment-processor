@@ -12,6 +12,7 @@ import (
 	"github.com/jesseinvent/go-payment-processor/internal/configs"
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
 	"github.com/jesseinvent/go-payment-processor/internal/db"
+	ledgerEntry "github.com/jesseinvent/go-payment-processor/internal/ledger_entry"
 	"github.com/jesseinvent/go-payment-processor/internal/pkg/redis"
 	"github.com/jesseinvent/go-payment-processor/internal/router"
 	"github.com/jesseinvent/go-payment-processor/internal/transaction"
@@ -45,16 +46,18 @@ func RunServer() {
 
 	// Use migrations on production
 	if config.ENVIRONMENT == "development" {
-	 err = dbConn.AutoMigrate(
-			&user.User{}, 
-			&transaction.Transaction{}, 
-			&wallet.Wallet{}, 
-			&currency.Currency{},
-		)
+		log.Print("Running DB auto migrations on Dev mode")
+		err = dbConn.AutoMigrate(
+				&user.User{}, 
+				&transaction.Transaction{}, 
+				&wallet.Wallet{}, 
+				&currency.Currency{},
+				&ledgerEntry.LedgerEntry{},
+			)
 
-	 if err != nil {
-		log.Fatal("Error running auto migrations - ", err)
-	 }
+		if err != nil {
+			log.Fatal("Error running auto migrations - ", err)
+		}
 	}
 
 	// Connect to Redis

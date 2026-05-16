@@ -12,18 +12,16 @@ const (
 )
 
 const (
-	Credit TransactionType = "credit"
-	Debit TransactionType = "debit"
+	Sent TransactionType = "sent"
+	Received TransactionType = "received"
 )	
 type Transaction struct {
 	gorm.Model
 	UserId      					uint				`gorm:"not null"`	
 	WalletId						uint				`gorm:"not null"`
 	CurrencyId 						uint				`gorm:"not null"`
-	PreviousWalletBalance 			int              	`gorm:"not null"`
 	Reference 						string				`gorm:"not null"`
 	Amount                     		int					`gorm:"not null"`
-	CurrentWalletBalance        	int				   	`gorm:"not null"`
 	Internal                    	bool			   	`gorm:"not null;default:false"`
 	TransactionBeneficiaryDetails   string				`gorm:"null"`
 	Status                      	TransactionStatus  	`gorm:"not null;default:'pending'"`

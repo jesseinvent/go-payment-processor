@@ -3,9 +3,11 @@ package payment
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
+	ledgerEntry "github.com/jesseinvent/go-payment-processor/internal/ledger_entry"
 	"github.com/jesseinvent/go-payment-processor/internal/pkg/redis"
 	"github.com/jesseinvent/go-payment-processor/internal/pkg/utils"
 	"github.com/jesseinvent/go-payment-processor/internal/transaction"
@@ -23,19 +25,19 @@ type InternalTransferService interface {
 	) (string, error)
 }
 type internalTransferService struct {
-	walletStore wallet.WalletStore
-	currencyStore currency.CurrencyStore
-	currencyService currency.CurrencyService
-	transactionStore transaction.TransactionStore
-	redisService redis.RedisService
+	walletStore 		wallet.WalletStore
+	currencyStore 		currency.CurrencyStore
+	currencyService 	currency.CurrencyService
+	transactionStore 	transaction.TransactionStore
+	redisService 		redis.RedisService
 }
 
 func NewInternalTransferService(
-		walletStore wallet.WalletStore, 
-		currencyStore currency.CurrencyStore, 
-		currencyService currency.CurrencyService, 
-		transactionStore transaction.TransactionStore, 
-		redisService redis.RedisService,
+		walletStore 		wallet.WalletStore, 
+		currencyStore 		currency.CurrencyStore, 
+		currencyService 	currency.CurrencyService, 
+		transactionStore 	transaction.TransactionStore, 
+		redisService 		redis.RedisService,
 	) InternalTransferService {
 	return &internalTransferService{
 		walletStore: walletStore,
@@ -50,10 +52,12 @@ func NewInternalTransferService(
 func (s *internalTransferService) ProcessInternalWalletTransfer(
 		senderUserId, 
 		receiverUserId, 
-		currencyId uint, 
-		amount float64, 
-		idempotencyKey string,
+		currencyId 		uint, 
+		amount 			float64, 
+		idempotencyKey 	string,
 	) (string, error) {
+
+	log.Print(idempotencyKey)
 
 	var senderCurrencyWallet, receiverCurrencyWallet *wallet.Wallet
 
@@ -125,25 +129,19 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 		// Calculate amount in minor unit
 		amountInMinorUnit, err := s.currencyService.CalculateCurrencyAmountInBaseUnit(currencyId, float64(amount))
 
-		// Amount = $10
-		// fee = 10% X amount (calculateFee(amount)) // $1 = {feeCharge = $1, amountToDebit = $10, ReceiverAmount = $9} 
-		// ReceiverAmount = $amount - feeCharge = $9
-
 		if err != nil {
 			return fmt.Errorf("error calculating amount in minor unit - %w", err)
 		}
-
 
 		// Validate sender has sufficient balance
 		if senderCurrencyWallet.Balance < uint(amountInMinorUnit) {
 			return fmt.Errorf("insufficient balance in sender wallet")
 		}
 
-		senderCurrencyWalletBalance := senderCurrencyWallet.Balance - uint(amountInMinorUnit)
+		senderCurrentWalletBalance := senderCurrencyWallet.Balance - uint(amountInMinorUnit)
 
 		// Debit sender wallet
-		// Debiting $walletId $10
-		err = s.walletStore.Debit(tx, senderCurrencyWallet.ID, uint(amountInMinorUnit)) // $10
+		err = s.walletStore.Debit(tx, senderCurrencyWallet.ID, uint(amountInMinorUnit)) 
 
 		if err != nil {
 			return fmt.Errorf("error debiting sender wallet - %w", err)
@@ -154,14 +152,10 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 			UserId:                  senderUserId,
 			WalletId:                senderCurrencyWallet.ID,
 			CurrencyId:              senderCurrencyWallet.CurrencyId,
-			PreviousWalletBalance:   int(prevSenderBalance),
 			Amount:                  int(amountInMinorUnit),
-			CurrentWalletBalance:    int(senderCurrencyWalletBalance),
 			Reference:               ref,
-			TransactionType:         transaction.Debit,
+			TransactionType:         transaction.Sent,
 			Status:                  transaction.Completed,
-			// feeCharged:  $1
-			// amountDebit: $10
 		}
 
 		err = tx.Create(senderDebitTransaction).Error
@@ -170,35 +164,64 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 			return fmt.Errorf("error creating sender transaction record - %w", err)
 		}
 
-		receiverCurrencyWalletBalance := receiverCurrencyWallet.Balance + uint(amountInMinorUnit)
+		senderLedgerEntry := &ledgerEntry.LedgerEntry{
+			UserId: senderUserId,
+			TransactionId: senderDebitTransaction.ID,
+			WalletId: senderCurrencyWallet.ID,
+			CurrencyId: currencyId,
+			EntryType: ledgerEntry.Debit,
+			BalanceBefore: int(prevSenderBalance),
+			Amount: amountInMinorUnit,	
+			BalanceAfter: int(senderCurrentWalletBalance),
+		}
+
+		err = tx.Create(senderLedgerEntry).Error
+
+		if err != nil {
+			return fmt.Errorf("error creating sender ledger record - %w", err)
+		}
 		
 		// Credit receiver wallet
-		// Crediting $wallet $9
 		err = s.walletStore.Credit(tx, receiverCurrencyWallet.ID, uint(amountInMinorUnit)) // $9
 
 		if err != nil {
 			return fmt.Errorf("error crediting receiver wallet - %w", err)
 		}
 
+		receiverCurrencyWalletBalance := receiverCurrencyWallet.Balance + uint(amountInMinorUnit)
+
 		// Create credit transaction record for receiver
 		receiverCreditTransaction := &transaction.Transaction{
 			UserId:                  receiverUserId,
 			WalletId:                receiverCurrencyWallet.ID,
 			CurrencyId:              receiverCurrencyWallet.CurrencyId,
-			PreviousWalletBalance:   int(prevReceiverBalance),
 			Amount:                  int(amountInMinorUnit), // receiveAmount $9
-			CurrentWalletBalance:    int(receiverCurrencyWalletBalance),
 			Reference:               ref,
-			TransactionType:         transaction.Credit,
+			TransactionType:         transaction.Received,
 			Status:                  transaction.Completed,
-			// feeCharged:  $1
-			// amountCredit: $9
 		}
 
 		err = tx.Create(receiverCreditTransaction).Error
 
 		if err != nil {
 			return fmt.Errorf("error creating receiver transaction record - %w", err)
+		}
+
+		receiverLedgerEntry := &ledgerEntry.LedgerEntry{
+			UserId: receiverUserId,
+			TransactionId: receiverCreditTransaction.ID,
+			WalletId: receiverCurrencyWallet.ID,
+			CurrencyId: currencyId,
+			EntryType: ledgerEntry.Credit,
+			BalanceBefore: int(prevReceiverBalance),
+			Amount: amountInMinorUnit,	
+			BalanceAfter: int(receiverCurrencyWalletBalance),
+		}
+
+		err = tx.Create(receiverLedgerEntry).Error
+
+		if err != nil {
+			return fmt.Errorf("error creating receiver ledger record - %w", err)
 		}
 
 		return nil
