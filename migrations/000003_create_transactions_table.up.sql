@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     currency_id INTEGER NOT NULL,
 
     reference TEXT NOT NULL,
-    amount INTEGER NOT NULL,
+    amount BIGINT NOT NULL,
 
     internal BOOLEAN NOT NULL DEFAULT FALSE,
 

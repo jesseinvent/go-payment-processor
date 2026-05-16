@@ -3,7 +3,6 @@ package payment
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jesseinvent/go-payment-processor/internal/currency"
@@ -56,8 +55,6 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 		amount 			float64, 
 		idempotencyKey 	string,
 	) (string, error) {
-
-	log.Print(idempotencyKey)
 
 	var senderCurrencyWallet, receiverCurrencyWallet *wallet.Wallet
 
