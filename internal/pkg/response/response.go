@@ -14,10 +14,10 @@ func Success(message string, data any) ApiResponse {
 	}
 }
 
-func Error(messsage string) ApiResponse {
+func Error(message string) ApiResponse {
 	return ApiResponse{
 		Status: false,
-		Message: messsage,
+		Message: message,
 		Data: nil,
 	}
 }

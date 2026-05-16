@@ -125,6 +125,10 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 		// Calculate amount in minor unit
 		amountInMinorUnit, err := s.currencyService.CalculateCurrencyAmountInBaseUnit(currencyId, float64(amount))
 
+		// Amount = $10
+		// fee = 10% X amount (calculateFee(amount)) // $1 = {feeCharge = $1, amountToDebit = $10, ReceiverAmount = $9} 
+		// ReceiverAmount = $amount - feeCharge = $9
+
 		if err != nil {
 			return fmt.Errorf("error calculating amount in minor unit - %w", err)
 		}
@@ -138,7 +142,8 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 		senderCurrencyWalletBalance := senderCurrencyWallet.Balance - uint(amountInMinorUnit)
 
 		// Debit sender wallet
-		err = s.walletStore.Debit(tx, senderCurrencyWallet.ID, uint(amountInMinorUnit))
+		// Debiting $walletId $10
+		err = s.walletStore.Debit(tx, senderCurrencyWallet.ID, uint(amountInMinorUnit)) // $10
 
 		if err != nil {
 			return fmt.Errorf("error debiting sender wallet - %w", err)
@@ -155,6 +160,8 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 			Reference:               ref,
 			TransactionType:         transaction.Debit,
 			Status:                  transaction.Completed,
+			// feeCharged:  $1
+			// amountDebit: $10
 		}
 
 		err = tx.Create(senderDebitTransaction).Error
@@ -166,7 +173,8 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 		receiverCurrencyWalletBalance := receiverCurrencyWallet.Balance + uint(amountInMinorUnit)
 		
 		// Credit receiver wallet
-		err = s.walletStore.Credit(tx, receiverCurrencyWallet.ID, uint(amountInMinorUnit))
+		// Crediting $wallet $9
+		err = s.walletStore.Credit(tx, receiverCurrencyWallet.ID, uint(amountInMinorUnit)) // $9
 
 		if err != nil {
 			return fmt.Errorf("error crediting receiver wallet - %w", err)
@@ -178,11 +186,13 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 			WalletId:                receiverCurrencyWallet.ID,
 			CurrencyId:              receiverCurrencyWallet.CurrencyId,
 			PreviousWalletBalance:   int(prevReceiverBalance),
-			Amount:                  int(amountInMinorUnit),
+			Amount:                  int(amountInMinorUnit), // receiveAmount $9
 			CurrentWalletBalance:    int(receiverCurrencyWalletBalance),
 			Reference:               ref,
 			TransactionType:         transaction.Credit,
 			Status:                  transaction.Completed,
+			// feeCharged:  $1
+			// amountCredit: $9
 		}
 
 		err = tx.Create(receiverCreditTransaction).Error

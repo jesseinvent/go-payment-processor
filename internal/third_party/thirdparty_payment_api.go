@@ -51,3 +51,4 @@ func (s *thirdPartyPaymentAPI) SimulateBankTransfer(request SimulateBankTransfer
 		Status:     "success",
 	}, nil
 }
+
