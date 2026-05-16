@@ -99,7 +99,11 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 		}
 
 		// Lock sender currency wallet for update
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ? AND currency_id = ?", senderUserId, currencyId).First(&senderCurrencyWallet).Error
+		err := tx.Clauses(
+				clause.Locking{Strength: "UPDATE"},
+			).Where(
+				"user_id = ? AND currency_id = ?", senderUserId, currencyId,
+			).First(&senderCurrencyWallet).Error
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -110,7 +114,11 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 		}
 
 		// Lock receiver currency wallet for update
-		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ? AND currency_id = ?", receiverUserId, currencyId).First(&receiverCurrencyWallet).Error
+		err = tx.Clauses(
+				clause.Locking{Strength: "UPDATE"},
+			).Where(
+				"user_id = ? AND currency_id = ?", receiverUserId, currencyId,
+			).First(&receiverCurrencyWallet).Error
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {

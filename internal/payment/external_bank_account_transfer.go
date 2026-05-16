@@ -57,7 +57,6 @@ func NewExternalBankAccountTransferService(
 		thirdPartyService: thirdPartyService,
 	}
 }
-
 type BeneficiaryDetails struct {
 	BeneficiaryName string
 	BeneficiaryAccountNumber string
@@ -68,11 +67,11 @@ type BeneficiaryDetails struct {
 
 // Simulates transfers between a wallet and an external bank account using transactions.
 func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
-		userId uint, 
-		currencyId uint, 
-		amount float64,  
-		idempotencyKey string, 
-		beneficiaryDetails BeneficiaryDetails,
+		userId 				uint, 
+		currencyId 			uint, 
+		amount 				float64,  
+		idempotencyKey 		string, 
+		beneficiaryDetails 	BeneficiaryDetails,
 	) (string, error) {
 	 
 	ctx := context.Background()
@@ -121,7 +120,11 @@ func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 		// Get sender's currency wallet and lock for update to prevent race conditions
 		senderCurrencyWallet := &wallet.Wallet{}
 
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ? AND currency_id = ?", userId, currencyId).First(&senderCurrencyWallet).Error
+		err := tx.Clauses(
+				clause.Locking{Strength: "UPDATE"},
+			).Where(
+				"user_id = ? AND currency_id = ?", userId, currencyId,
+			).First(&senderCurrencyWallet).Error
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -180,7 +183,8 @@ func (s *externalBankAccountTransferService) ProcessExternalBankAccountTransfer(
 		return "", err
 	}
 
-	// In a real scalable production system, the processes below (initiating third party transfer and updating transaction status) would be handled asynchronously using a message queue to improve latency of the API and reliability of the transfer.
+	// In a real scalable production system, the processes below (initiating third party transfer and updating transaction status)
+	//  would be handled asynchronously using a message queue to improve latency of the API and reliability of the transfer.
 
 	thirdPartyApiRequest := thirdparty.SimulateBankTransferRequest{
 		UserId: userId,
