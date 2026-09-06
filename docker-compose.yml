@@ -1,23 +1,4 @@
 services:
-  payment-processor:
-    build: .
-    ports:
-      - "5001:5001"
-    environment:
-      - DB_HOST=postgres-db
-      - DB_PORT=5432
-      - DB_NAME=postgres 
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_URL=postgres://user:password@postgres-db:5432/postgres?sslmode=disable
-      - REDIS_URL=redis:6379
-    
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-
   postgres-db:
     image: postgres:latest
     environment:
@@ -36,5 +17,68 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
-          
+
+  go-payment-processor:
+    build: .
+    ports:
+      - "5001:5001"
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_NAME=postgres 
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_URL=postgres://user:password@postgres-db:5432/postgres?sslmode=disable
+      - REDIS_URL=redis:6379
+
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_NAME=postgresql://user:password@postgres-db:5432/postgres?sslmode=disable
+    ports:
+      - "9187:9187"
+    depends_on:
+      postgres-db:
+        condition: service_healthy    
+  
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      postgres-exporter:
+        condition: service_started
+
+  loki:
+    image: grafana/loki
+    ports: ["3100:3100"]
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
+            
+  alloy:
+    image: grafana/alloy:latest
+    volumes:
+      - ./alloy-config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: run /etc/alloy/config.alloy --server.http.listen-addr=0.0.0.0:12345
+    ports: ["12345:12345"]
+
+  
 

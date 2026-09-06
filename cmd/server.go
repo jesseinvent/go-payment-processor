@@ -17,6 +17,7 @@ import (
 	"github.com/jesseinvent/go-payment-processor/internal/router"
 	"github.com/jesseinvent/go-payment-processor/internal/transaction"
 	"github.com/jesseinvent/go-payment-processor/internal/wallet"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
 )
 
@@ -76,6 +77,8 @@ func RunServer() {
 			"message": "Payment Processor.",
 		})
 	})
+
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Register all routes
 	router.RegisterRoutes(r, dbConn, redisService)

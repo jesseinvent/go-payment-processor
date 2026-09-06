@@ -63,12 +63,12 @@ func (s *internalTransferService) ProcessInternalWalletTransfer(
 
 	ctx := context.Background()
 
-	// CheckS if request has already been processed for the given key. If not, set the key with the transfer reference to prevent duplicate processing.
+	// Checks if request has already been processed for the given key. If not, set the key with the transfer reference to prevent duplicate processing.
 
 	// if KeySet = true; Key was not found in redis and was created, safe for processing.
 	// if KeySet = false; Key already exists in redis and was not created, return existing reference without processing transfer again.
 	
-	keySet, err := s.redisService.SetNX(ctx, idempotencyKey, "pending", 5*time.Minute)
+	keySet, err := s.redisService.SetNX(ctx, idempotencyKey, "pending", 5*time.Minute) // 24hours
 
 	if !keySet {
 		// Key already exists, return existing reference without processing transfer again
